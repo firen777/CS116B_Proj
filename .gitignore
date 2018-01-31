@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# Base Source Codes
+origin/
