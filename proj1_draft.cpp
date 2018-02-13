@@ -521,9 +521,17 @@ void draw_meta ()
     for (int i=0; i<SQUARE_X; i++)
       for (int j=0; j<SQUARE_Y; j++)
       {
-        float xMid = ((float)i+0.5)*(float)X_RESOLUTION/(float)SQUARE_X; //X center of the square
-        float yMid = ((float)i+0.5)*(float)Y_RESOLUTION/(float)SQUARE_Y; //Y center of the square
+        float x0   = ((float)i)*(float)X_RESOLUTION/(float)SQUARE_X; //left corners of the square
+        float y0   = ((float)j)*(float)Y_RESOLUTION/(float)SQUARE_Y; //top corners of the square
+        float x1   = ((float)i+1.0f)*(float)X_RESOLUTION/(float)SQUARE_X; //right corners of the square
+        float y1   = ((float)j+1.0f)*(float)Y_RESOLUTION/(float)SQUARE_Y; //bottom corners of the square
+        float xMid = ((float)i+0.5f)*(float)X_RESOLUTION/(float)SQUARE_X; //X center of the square
+        float yMid = ((float)j+0.5f)*(float)Y_RESOLUTION/(float)SQUARE_Y; //Y center of the square
         unsigned char sqr = 0;
+        //====//
+        //1  2//
+        //4  8//
+        //====//
         sqr | (dat_mat[i][j]>=1.0    ? 1:0);
         sqr | (dat_mat[i+1][j]>=1.0  ? 2:0);
         sqr | (dat_mat[i][j+1]>=1.0  ? 4:0);
@@ -532,9 +540,119 @@ void draw_meta ()
         switch(sqr)
         {
           case 0x0:
+            // o o
+            // o o
             break;
           case 0x1:
-            //glVertex3f (ball.position.x + ball.radius, ball.position.y, 0.0f);
+            // x o
+            // o o
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, yMid, 0.0f);
+            glVertex3f(xMid, y0, 0.0f);
+            break;
+          case 0x2:
+            // o x
+            // o o
+            glVertex3f(x1, y0, 0.0f);
+            glVertex3f(xMid, y0, 0.0f);
+            glVertex3f(x1, yMid, 0.0f);
+            break;
+          case 0x3:
+            // x x
+            // o o
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, yMid, 0.0f);
+            glVertex3f(x1, yMid, 0.0f);
+            glVertex3f(x1, y0, 0.0f);
+            break;
+          case 0x4:
+            // o o
+            // x o
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(xMid, y1, 0.0f);
+            glVertex3f(x0, yMid, 0.0f);
+            break;
+          case 0x5:
+            // x o
+            // x o
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(xMid, y1, 0.0f);
+            glVertex3f(xMid, y0, 0.0f);
+            break;
+          case 0x6:
+            // o x
+            // x o
+            glVertex3f(x1, y0, 0.0f);
+            glVertex3f(xMid, y0, 0.0f);
+            glVertex3f(x0, yMid, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(xMid, y1, 0.0f);
+            glVertex3f(x1, yMid, 0.0f);
+            break;
+          case 0x7:
+            // x x
+            // x o
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(xMid, y1, 0.0f);
+            glVertex3f(x1, yMid, 0.0f);
+            glVertex3f(x1, y0, 0.0f);
+            break;
+          case 0x8:
+            // o o
+            // o x
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, yMid, 0.0f);
+            glVertex3f(xMid, y1, 0.0f);
+            break;
+          case 0x9:
+            // x o
+            // o x
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, yMid, 0.0f);
+            glVertex3f(xMid, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, yMid, 0.0f);
+            glVertex3f(xMid, y0, 0.0f);
+            break;
+          case 0xA:
+            // o x
+            // o x
+            glVertex3f(x1, y0, 0.0f);
+            glVertex3f(xMid, y0, 0.0f);
+            glVertex3f(xMid, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            break;
+          case 0xB:
+            // x x
+            // o x
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, yMid, 0.0f);
+            glVertex3f(xMid, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, y0, 0.0f);
+            break;
+          case 0xC:
+            // o o
+            // x x
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, yMid, 0.0f);
+            glVertex3f(x0, yMid, 0.0f);
+            break;
+          case 0xD:
+            // x o
+            // x x
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, yMid, 0.0f);
+            glVertex3f(xMid, y0, 0.0f);
+            break;
+          case 0xE:
+            // o x
+            // x x
         }
         glEnd();
 
@@ -546,7 +664,7 @@ void calc_dat_mat()
   for (int i=0; i<SQUARE_X+1; i++)
     for (int j=0; j<SQUARE_Y+1; j++)
     {
-      float tempVar = 0.0; //temp Answer to be stored in matrix
+      float tempVar = 0.0f; //temp Answer to be stored in matrix
       float tempX = (float)i*(float)X_RESOLUTION/(float)SQUARE_X; //X coordinate of the corner to be checked
       float tempY = (float)j*(float)Y_RESOLUTION/(float)SQUARE_Y; //X coordinate of the corner to be checked
       
