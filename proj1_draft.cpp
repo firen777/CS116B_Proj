@@ -532,10 +532,10 @@ void draw_meta ()
         //1  2//
         //4  8//
         //====//
-        sqr | (dat_mat[i][j]>=1.0    ? 1:0);
-        sqr | (dat_mat[i+1][j]>=1.0  ? 2:0);
-        sqr | (dat_mat[i][j+1]>=1.0  ? 4:0);
-        sqr | (dat_mat[i+1][j+1]>=1.0? 8:0);
+        sqr = sqr | (dat_mat[i][j]>=1.0    ? 1:0);
+        sqr = sqr | (dat_mat[i+1][j]>=1.0  ? 2:0);
+        sqr = sqr | (dat_mat[i][j+1]>=1.0  ? 4:0);
+        sqr = sqr | (dat_mat[i+1][j+1]>=1.0? 8:0);
         glBegin(GL_POLYGON);
         switch(sqr)
         {
@@ -653,9 +653,24 @@ void draw_meta ()
           case 0xE:
             // o x
             // x x
+            glVertex3f(x1, y0, 0.0f);
+            glVertex3f(xMid, y0, 0.0f);
+            glVertex3f(x0, yMid, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            break;
+          case 0xF:
+            // x x
+            // x x
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, y0, 0.0f);
+            break;
+          default:
+            break;
         }
         glEnd();
-
       }
   }
 }
