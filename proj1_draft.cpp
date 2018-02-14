@@ -1,5 +1,13 @@
 /*Un Hou CHan*/
 /*Reference: http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/ */
+
+/**Key mapping:
+ * Press Esc to quit program
+ * Press 'Z' to toggle Linear Interpolation
+ * Press 'X' to toggle Plain circle
+ * 
+*/
+
 //=======Include=======//
 #include <math.h>
 #include <time.h>
@@ -28,8 +36,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define SQUARE_X 80
-#define SQUARE_Y 60
+#define CELL_X 160
+#define CELL_Y 120
 //=======Struct=======//
 /**int r,g,b
 */
@@ -69,7 +77,7 @@ ball_type ball7;
 ball_type ball8;
 
 //data matrix for marching square corners. Float value is for Linear Interpolation
-float dat_mat [SQUARE_X+1][SQUARE_Y+1]; 
+float dat_mat [CELL_X+1][CELL_Y+1]; 
 //global control for Linear Interpolation, Plain Circle 
 bool linear_interp, plain_circle;
 //=======Func Proto=======//
@@ -103,6 +111,11 @@ void calc_dat_mat();
 
 void display (void);
 void reshape (int, int);
+/**Key mapping:
+ * Press Esc to quit program
+ * Press 'Z' to toggle Linear Interpolation
+ * Press 'X' to toggle Plain circle 
+*/
 void keyboard (unsigned char, int, int);
 
 //=======Func Implementations=======//
@@ -514,19 +527,194 @@ void draw_meta ()
   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
   if (linear_interp)
   {
-    //TODO: implement Linear Interpolation if have time
+    for (int i=0; i<CELL_X; i++)
+      for (int j=0; j<CELL_Y; j++)
+      {
+        float cw = (float)X_RESOLUTION/(float)CELL_X; //cell width
+        float ch = (float)Y_RESOLUTION/(float)CELL_Y; //cell height
+        float x0   = ((float)i)*cw; //left corners of the cell
+        float y0   = ((float)j)*ch; //top corners of the cell
+        float x1   = ((float)i+1.0f)*cw; //right corners of the cell
+        float y1   = ((float)j+1.0f)*ch; //bottom corners of the cell
+        
+        //temp rename for cell corners values
+        float p00  = dat_mat[i][j];     
+        float p10  = dat_mat[i+1][j];
+        float p01  = dat_mat[i][j+1];
+        float p11  = dat_mat[i+1][j+1];
+
+        // mid value
+        float tMid = cw * (1.0-p00)/(p10-p00) + x0; //top mid
+        float lMid = ch * (1.0-p00)/(p01-p00) + y0; //left mid
+        float bMid = cw * (1.0-p01)/(p11-p01) + x0; //botton mid
+        float rMid = ch * (1.0-p10)/(p11-p10) + y0; //left mid
+
+        unsigned char sqr = 0;
+        //====//
+        //1  2//
+        //4  8//
+        //====//
+        sqr = sqr | (p00>=1.0  ? 1:0);
+        sqr = sqr | (p10>=1.0  ? 2:0);
+        sqr = sqr | (p01>=1.0  ? 4:0);
+        sqr = sqr | (p11>=1.0  ? 8:0);
+        glBegin(GL_POLYGON);
+        /*example
+         o o
+         o x
+         (yMid - y0)    1 - mat(x1,y0)
+         ----------- ~= -------------------------
+         (y1 - y0)      mat(x1,y1) - mat(x1,y0)
+         ============
+         yMid ~= y0 + (y1 - y0)(...)
+        */
+        switch(sqr)
+        {
+          case 0x0:
+            // o o
+            // o o
+            break;
+          case 0x1:
+            // x o
+            // o o
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, lMid, 0.0f);
+            glVertex3f(tMid, y0, 0.0f);
+            break;
+          case 0x2:
+            // o x
+            // o o
+            glVertex3f(x1, y0, 0.0f);
+            glVertex3f(tMid, y0, 0.0f);
+            glVertex3f(x1, rMid, 0.0f);
+            break;
+          case 0x3:
+            // x x
+            // o o
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, lMid, 0.0f);
+            glVertex3f(x1, rMid, 0.0f);
+            glVertex3f(x1, y0, 0.0f);
+            break;
+          case 0x4:
+            // o o
+            // x o
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(bMid, y1, 0.0f);
+            glVertex3f(x0, lMid, 0.0f);
+            break;
+          case 0x5:
+            // x o
+            // x o
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(bMid, y1, 0.0f);
+            glVertex3f(tMid, y0, 0.0f);
+            break;
+          case 0x6:
+            // o x
+            // x o
+            glVertex3f(x1, y0, 0.0f);
+            glVertex3f(tMid, y0, 0.0f);
+            glVertex3f(x0, lMid, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(bMid, y1, 0.0f);
+            glVertex3f(x1, rMid, 0.0f);
+            break;
+          case 0x7:
+            // x x
+            // x o
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(bMid, y1, 0.0f);
+            glVertex3f(x1, rMid, 0.0f);
+            glVertex3f(x1, y0, 0.0f);
+            break;
+          case 0x8:
+            // o o
+            // o x
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, rMid, 0.0f);
+            glVertex3f(bMid, y1, 0.0f);
+            break;
+          case 0x9:
+            // x o
+            // o x
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, lMid, 0.0f);
+            glVertex3f(bMid, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, rMid, 0.0f);
+            glVertex3f(tMid, y0, 0.0f);
+            break;
+          case 0xA:
+            // o x
+            // o x
+            glVertex3f(x1, y0, 0.0f);
+            glVertex3f(tMid, y0, 0.0f);
+            glVertex3f(bMid, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            break;
+          case 0xB:
+            // x x
+            // o x
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, lMid, 0.0f);
+            glVertex3f(bMid, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, y0, 0.0f);
+            break;
+          case 0xC:
+            // o o
+            // x x
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, rMid, 0.0f);
+            glVertex3f(x0, lMid, 0.0f);
+            break;
+          case 0xD:
+            // x o
+            // x x
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, rMid, 0.0f);
+            glVertex3f(tMid, y0, 0.0f);
+            break;
+          case 0xE:
+            // o x
+            // x x
+            glVertex3f(x1, y0, 0.0f);
+            glVertex3f(tMid, y0, 0.0f);
+            glVertex3f(x0, lMid, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            break;
+          case 0xF:
+            // x x
+            // x x
+            glVertex3f(x0, y0, 0.0f);
+            glVertex3f(x0, y1, 0.0f);
+            glVertex3f(x1, y1, 0.0f);
+            glVertex3f(x1, y0, 0.0f);
+            break;
+          default:
+            break;
+        }
+        glEnd();
+      }
   }
   else
   {
-    for (int i=0; i<SQUARE_X; i++)
-      for (int j=0; j<SQUARE_Y; j++)
+    for (int i=0; i<CELL_X; i++)
+      for (int j=0; j<CELL_Y; j++)
       {
-        float x0   = ((float)i)*(float)X_RESOLUTION/(float)SQUARE_X; //left corners of the square
-        float y0   = ((float)j)*(float)Y_RESOLUTION/(float)SQUARE_Y; //top corners of the square
-        float x1   = ((float)i+1.0f)*(float)X_RESOLUTION/(float)SQUARE_X; //right corners of the square
-        float y1   = ((float)j+1.0f)*(float)Y_RESOLUTION/(float)SQUARE_Y; //bottom corners of the square
-        float xMid = ((float)i+0.5f)*(float)X_RESOLUTION/(float)SQUARE_X; //X center of the square
-        float yMid = ((float)j+0.5f)*(float)Y_RESOLUTION/(float)SQUARE_Y; //Y center of the square
+        float x0   = ((float)i)*(float)X_RESOLUTION/(float)CELL_X; //left corners of the cell
+        float y0   = ((float)j)*(float)Y_RESOLUTION/(float)CELL_Y; //top corners of the cell
+        float x1   = ((float)i+1.0f)*(float)X_RESOLUTION/(float)CELL_X; //right corners of the cell
+        float y1   = ((float)j+1.0f)*(float)Y_RESOLUTION/(float)CELL_Y; //bottom corners of the cell
+        float xMid = ((float)i+0.5f)*(float)X_RESOLUTION/(float)CELL_X; //X center of the cell
+        float yMid = ((float)j+0.5f)*(float)Y_RESOLUTION/(float)CELL_Y; //Y center of the cell
         unsigned char sqr = 0;
         //====//
         //1  2//
@@ -676,12 +864,12 @@ void draw_meta ()
 }
 void calc_dat_mat()
 {
-  for (int i=0; i<SQUARE_X+1; i++)
-    for (int j=0; j<SQUARE_Y+1; j++)
+  for (int i=0; i<CELL_X+1; i++)
+    for (int j=0; j<CELL_Y+1; j++)
     {
       float tempVar = 0.0f; //temp Answer to be stored in matrix
-      float tempX = (float)i*(float)X_RESOLUTION/(float)SQUARE_X; //X coordinate of the corner to be checked
-      float tempY = (float)j*(float)Y_RESOLUTION/(float)SQUARE_Y; //X coordinate of the corner to be checked
+      float tempX = (float)i*(float)X_RESOLUTION/(float)CELL_X; //X coordinate of the corner to be checked
+      float tempY = (float)j*(float)Y_RESOLUTION/(float)CELL_Y; //X coordinate of the corner to be checked
       
       tempVar += (float)(ball1.radius*ball1.radius)/
                  ((tempX-(float)ball1.position.x)*(tempX-(float)ball1.position.x)+
@@ -710,7 +898,7 @@ void calc_dat_mat()
       
       dat_mat[i][j]=tempVar;
     }
-  //printf("%f\n",dat_mat[SQUARE_X/2][SQUARE_Y/2]);
+  //printf("%f\n",dat_mat[CELL_X/2][CELL_Y/2]);
 }
 void display(void)
 {
@@ -809,6 +997,12 @@ void keyboard (unsigned char key, int x, int y)
     case 27:    //Esc key to quit
       exit (0);
     break;  
+    case 'z':
+      linear_interp = !linear_interp;
+      break;
+    case 'x':
+      plain_circle = !plain_circle;
+      break;
     default: 
     break;
   }
@@ -910,7 +1104,7 @@ int main (int argc, char *argv[])
   // initialize control for drawing plain circle
   plain_circle = true;
   // initialize control for using Linear Interpolation
-  linear_interp = false;
+  linear_interp = true;
 
   glutInit (&argc, argv);
   glutInitDisplayMode (GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH); 
