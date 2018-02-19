@@ -36,8 +36,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define CELL_X 160
-#define CELL_Y 120
+#define CELL_X 40
+#define CELL_Y 30
 //=======Struct=======//
 /**int r,g,b
 */
@@ -709,12 +709,14 @@ void draw_meta ()
     for (int i=0; i<CELL_X; i++)
       for (int j=0; j<CELL_Y; j++)
       {
-        float x0   = ((float)i)*(float)X_RESOLUTION/(float)CELL_X; //left corners of the cell
-        float y0   = ((float)j)*(float)Y_RESOLUTION/(float)CELL_Y; //top corners of the cell
-        float x1   = ((float)i+1.0f)*(float)X_RESOLUTION/(float)CELL_X; //right corners of the cell
-        float y1   = ((float)j+1.0f)*(float)Y_RESOLUTION/(float)CELL_Y; //bottom corners of the cell
-        float xMid = ((float)i+0.5f)*(float)X_RESOLUTION/(float)CELL_X; //X center of the cell
-        float yMid = ((float)j+0.5f)*(float)Y_RESOLUTION/(float)CELL_Y; //Y center of the cell
+        float cw = (float)X_RESOLUTION/(float)CELL_X; //cell width
+        float ch = (float)Y_RESOLUTION/(float)CELL_Y; //cell height
+        float x0   = ((float)i)*cw; //left corners of the cell
+        float y0   = ((float)j)*ch; //top corners of the cell
+        float x1   = ((float)i+1.0f)*cw; //right corners of the cell
+        float y1   = ((float)j+1.0f)*ch; //bottom corners of the cell
+        float xMid = ((float)i+0.5f)*cw; //X center of the cell
+        float yMid = ((float)j+0.5f)*ch; //Y center of the cell
         unsigned char sqr = 0;
         //====//
         //1  2//
