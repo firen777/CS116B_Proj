@@ -8,13 +8,14 @@
 class Vec3f
 {
     private:
+    public:
         float x;
         float y;
         float z;
-        float l;
     public:
-        Vec3f(float _x, float _y, float _z, float _l);
-
+        Vec3f(float _x, float _y, float _z):x(_x), y(_y), z(_z){}
+        float getL();
+        
 };
 
 /**
@@ -23,11 +24,11 @@ class Vec3f
 class Vec3i
 {
     private:
+    public:
         int x;
         int y;
         int z;
-        int l;
     public:
-
-    
+        Vec3i(int _x, int _y, int _z):x(_x), y(_y), z(_z){}
+        int getL();
 };
