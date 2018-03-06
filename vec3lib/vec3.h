@@ -15,7 +15,8 @@ class Vec3f
     public:
         Vec3f(float _x, float _y, float _z):x(_x), y(_y), z(_z){}
         float getL();
-        
+        float dot(const Vec3f& v);
+        Vec3f cross(const Vec3f& v);
 };
 
 /**
@@ -31,4 +32,6 @@ class Vec3i
     public:
         Vec3i(int _x, int _y, int _z):x(_x), y(_y), z(_z){}
         int getL();
+        int dot(const Vec3i& v);
+        Vec3i cross(const Vec3i& v);
 };
