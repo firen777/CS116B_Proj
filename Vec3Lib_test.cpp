@@ -9,7 +9,7 @@ int main(){
     printf("%f\n", v2.getL());
     Vec3f v3 = v1 + v2;
     printf("%f, %f\n", v3.x, v3.getL());
-    printf("%f", (2.0f*v1).x);
+    printf("%f", (2.0f * v1).x);
 
     return 0;
 }
