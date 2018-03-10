@@ -36,4 +36,4 @@ origin/
 #Makefile
 Makefile
 #Executables
-make_product
+product/
