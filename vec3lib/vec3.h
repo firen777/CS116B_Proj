@@ -42,6 +42,15 @@ class Vec3f
         friend Vec3f operator*(const Vec3f& v, float n);
         friend Vec3f operator*(float n, const Vec3f& v);
         
+        /**Get the unit vector w/ the same direction of this vector
+         * @return a new Vec3f unit vector
+        */
+        Vec3f getUnit() const;
+
+        /**EXPERIMENTAL! Unit vector using Fast Inverse Squareroot Algorithm
+         * @return a new Vec3f unit vector
+        */
+        Vec3f getUnitFast() const;
 
 };
 

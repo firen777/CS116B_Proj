@@ -14,6 +14,11 @@ float Vec3f::dot(const Vec3f& v) const{
     return ans;
 }
 
+Vec3f Vec3f::cross(const Vec3f& v) const{
+    //TODO: Implement cross product
+    return Vec3f(1,2,3);
+}
+
 Vec3f Vec3f::add(const Vec3f& v) const{
     Vec3f ans(this->x + v.x, this->y + v.y, this->z + v.z);
     return ans;
@@ -36,3 +41,12 @@ Vec3f operator*(float n, const Vec3f& v){
     return v.scale(n);
 }
 
+Vec3f Vec3f::getUnit() const{
+    //TODO: Implement Unit Vector
+    return Vec3f(1,0,0);
+}
+
+Vec3f Vec3f::getUnitFast() const{
+    //TODO: Implement Fast Unit Vector
+    return Vec3f(1,0,0);
+}
