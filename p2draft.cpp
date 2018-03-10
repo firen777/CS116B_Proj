@@ -65,7 +65,7 @@ void display (void)
   //
   // Place the camera
   glTranslatef (0.0, 0.0, -10.0);
-  glRotatef (angle, 0.0, 1.0, 0.0);
+  glRotatef (angle, 0.0, 0.0, 1.0);
   //
   // If no explosion, draw cube
   if (!cube_exploded)
@@ -74,7 +74,7 @@ void display (void)
     glDisable (GL_LIGHT0);
     glEnable (GL_DEPTH_TEST);
     glColor3f (1.0f, 0.0f, 0.0f);
-    glutSolidCube (5.0);
+    glutSolidCube (1.0);
   }
   glutSwapBuffers ();
 }
