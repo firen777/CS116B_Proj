@@ -55,7 +55,7 @@ Vec3f Vec3f::getUnit() const{
 Vec3f Vec3f::getUnitFast() const{
     float length = this->x*this->x + this->y*this->y + this->z*this->z;
     
-    Vec3f ans = this->scale(aclib::Q_rsqrt(length)); //weird negative bug wtf?
+    Vec3f ans = this->scale(aclib::Q_rsqrt(length)); //weird negative bug when using union version. wtf?
     
     // printf("DEBUG:%f\n",(length));
     // float n = aclib::Q_rsqrt(length);

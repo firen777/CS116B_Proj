@@ -65,7 +65,7 @@ void display (void)
   //
   // Place the camera
   glTranslatef (0.0, 0.0, -10.0);
-  glRotatef (angle, 0.0, 0.0, 1.0);
+  glRotatef (angle, 0.0, 1.0, 0.0);
   //
   // If no explosion, draw cube
   if (!cube_exploded)
