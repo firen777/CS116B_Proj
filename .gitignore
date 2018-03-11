@@ -33,8 +33,6 @@
 
 # Base Source Codes
 origin/
-#Makefile
-Makefile
 
 #Executables
 product/
