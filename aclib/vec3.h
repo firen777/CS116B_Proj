@@ -48,6 +48,7 @@ class Vec3f
         Vec3f getUnit() const;
 
         /**EXPERIMENTAL! Unit vector using Fast Inverse Squareroot Algorithm
+         * Reference: https://en.wikipedia.org/wiki/Fast_inverse_square_root
          * @return a new Vec3f unit vector
         */
         Vec3f getUnitFast() const;

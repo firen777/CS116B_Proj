@@ -1,5 +1,8 @@
 #include "vec3.h"
+#include "aclib.h"
 #include <math.h>
+
+#include <stdio.h>
 
 float Vec3f::getL() const{
     float ans = this->x*this->x + this->y*this->y + this->z*this->z;
@@ -29,7 +32,7 @@ Vec3f operator+(const Vec3f& a, const Vec3f& b){
 }
 
 Vec3f Vec3f::scale(float n) const{
-    Vec3f ans(this->x * n, this->z * n, this->z * n);
+    Vec3f ans(this->x * n, this->y * n, this->z * n);
     return ans;
 }
 
@@ -42,11 +45,28 @@ Vec3f operator*(float n, const Vec3f& v){
 }
 
 Vec3f Vec3f::getUnit() const{
-    //TODO: Implement Unit Vector
-    return Vec3f(1,0,0);
+    float length = this->x*this->x + this->y*this->y + this->z*this->z;
+    length = sqrt(length);
+
+    Vec3f ans = this->scale(1.0f/length);
+    return ans;
 }
 
 Vec3f Vec3f::getUnitFast() const{
-    //TODO: Implement Fast Unit Vector
-    return Vec3f(1,0,0);
+    float length = this->x*this->x + this->y*this->y + this->z*this->z;
+    
+    Vec3f ans = this->scale(aclib::Q_rsqrt(length)); //weird negative bug wtf?
+    
+    // printf("DEBUG:%f\n",(length));
+    // float n = aclib::Q_rsqrt(length);
+    // printf("DEBUG:%f\n",n);
+
+    // Vec3f ans = this->scale(n);
+
+    // printf("DEBUG:%f\n",(length));
+    // printf("DEBUG:%f\n",aclib::Q_rsqrt(length));
+    // printf("DEBUG:%f\n",aclib::Q_rsqrt(length));
+    
+    return ans;
 }
+

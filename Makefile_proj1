@@ -17,7 +17,6 @@ LFLAGS =
 LIBS = -framework GLUT -framework OpenGL -framework Cocoa -lm
 
 # define the C source files
-#SRCS = Vec3Lib_test.cpp vec3lib/*.cpp
 SRCS = Chan_UnHou_programming_project_1.cpp
 
 # define the C object files 
