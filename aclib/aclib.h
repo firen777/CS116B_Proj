@@ -1,7 +1,8 @@
-#pragma once
 /**Author: Un Hou (Albert) Chan
  * collection of useful helper functions
 */
+#pragma once
+
 
 namespace aclib{
 

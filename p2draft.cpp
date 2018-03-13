@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 #ifdef __APPLE__
   #include <OpenGL/gl.h>
@@ -10,10 +11,15 @@
   #include <GL/glut.h> 
 #endif
 
+//custom library
+#include "aclib/vec3.h"
+#include "aclib/aclib.h"
+
 int   cube_exploded = 0;
 float angle = 0.0; // camera rotation angle
 
-// Light sources
+Vec3f particleS[10000];
+Vec3f particleV[10000];
 
 
 void display (void);
@@ -25,6 +31,7 @@ void init(void);
 
 void init(void)
 {
+  // Light sources
   GLfloat  light0Amb[4] =  { 1.0, 0.6, 0.2, 1.0 };
   GLfloat  light0Dif[4] =  { 1.0, 0.6, 0.2, 1.0 };   
   GLfloat  light0Spec[4] = { 0.0, 0.0, 0.0, 1.0 };   
@@ -41,8 +48,9 @@ void init(void)
   glDepthFunc (GL_LEQUAL);
   glEnable (GL_COLOR_MATERIAL);
   glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-
-  glEnable (GL_LIGHT0);
+  
+  // glEnable (GL_LIGHT0);
+  glEnable (GL_LIGHTING);
   glEnable (GL_LIGHT1);
   glLightfv (GL_LIGHT0, GL_AMBIENT, light0Amb);
   glLightfv (GL_LIGHT0, GL_DIFFUSE, light0Dif);
@@ -53,7 +61,13 @@ void init(void)
   glLightfv (GL_LIGHT1, GL_SPECULAR, light1Spec);
   glLightfv (GL_LIGHT1, GL_POSITION, light1Pos);
   glLightModelf (GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-  // glEnable (GL_NORMALIZE);
+  glEnable (GL_NORMALIZE);
+}
+
+void particleInit(){
+  for(int i=0; i<10000; i++) {
+    particleS[i] = Vec3f();
+  }
 }
 
 void display (void)
@@ -62,19 +76,41 @@ void display (void)
 
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity ();
+
+  glBegin(GL_POLYGON);
+    
+  glEnd();
+  
+  // glEnable (GL_LIGHT0);
+  // glEnable (GL_LIGHT1);
+  // glEnable (GL_DEPTH_TEST);
+
   //
   // Place the camera
   glTranslatef (0.0, 0.0, -10.0);
+
+  
+  
+
   glRotatef (angle, 0.0, 1.0, 0.0);
   //
   // If no explosion, draw cube
   if (!cube_exploded)
   {
-    glEnable (GL_LIGHTING);
-    glDisable (GL_LIGHT0);
-    glEnable (GL_DEPTH_TEST);
     glColor3f (1.0f, 0.0f, 0.0f);
     glutSolidCube (1.0);
+    glPushMatrix();
+    glLoadIdentity();
+    glTranslatef (0.0, 0.0, -10.0);
+    glColor3f (1.0f, 1.0f, 0.0f);
+    glBegin(GL_POLYGON);
+      // // glNormal3f(-1.0f, 0.0f, 0.0f);
+      // glVertex3f(1.0f, 0.0f, 0.52f);
+      // glVertex3f(0.0f, 0.0f, 0.52f);
+      // glVertex3f(0.0f, 1.0f, 0.52f);
+
+    glEnd();
+    glPopMatrix();
   }
   glutSwapBuffers ();
 }
@@ -133,6 +169,7 @@ int main (int argc, char *argv[])
 
   //init
   init();
+  particleInit();
 
   //loop
   glutMainLoop ();

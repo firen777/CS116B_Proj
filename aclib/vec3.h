@@ -1,40 +1,48 @@
-#pragma once
 /**Author: Un Hou (Albert) Chan
- * 
+ * Custom made 3D vector class
+ * Dependancy: "aclib.h"
 */
+#pragma once
+#include "aclib.h"
 
 /**3D Vector, float version
 */
 class Vec3f
 {
     public:
-        const float x;
-        const float y;
-        const float z;
+        float x;
+        float y;
+        float z;
     public:
-        /**Constructor
+        /*Constructors
         */
         Vec3f(float _x, float _y, float _z):x(_x), y(_y), z(_z){}
+        Vec3f():x(0.0f), y(0.0f), z(0.0f){}
+
         /**Get Length of Vector
          * @return length
         */
         float getL() const;
+
         /**vector dot product, this dot v
          * @param v
          * @return a float
         */
         float dot(const Vec3f& v) const;
+
         /**vector cross product, this X v
          * @param v 
          * @return a new Vec3f
         */ 
         Vec3f cross(const Vec3f& v) const;
+
         /**vector addition, this + v
          * @param v
          * @return a new Vec3f
         */
         Vec3f add(const Vec3f& v) const;
         friend Vec3f operator+(const Vec3f& a, const Vec3f& b);
+
         /**vector scaling, nV
          * @return a new Vec3f
         */
@@ -52,6 +60,7 @@ class Vec3f
          * @return a new Vec3f unit vector
         */
         Vec3f getUnitFast() const;
+
 
 };
 
@@ -73,3 +82,17 @@ class Vec3i
         Vec3i cross(const Vec3i& v);
 };
 */
+
+// class testClass {
+// public:
+//     int x;
+// public:
+//     testClass():x(0){}
+//     testClass(int n):x(n){}
+
+//     int getX() {return this->x;}
+
+//     friend testClass operator+(testClass T1, testClass T2){
+//         return testClass(T1.x + T2.x);
+//     }
+// };

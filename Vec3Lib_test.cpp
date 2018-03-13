@@ -7,6 +7,8 @@ void printVec3ln(Vec3f v){
     printf("%f,%f,%f,\n", v.x,v.y,v.z);
 }
 
+
+
 int main(){
     Vec3f v1(1,-2,3);
     Vec3f v2(1,1,1);
@@ -26,6 +28,11 @@ int main(){
     printVec3ln(v4_1);
     printVec3ln(v4_2);
 
+    // testClass x(1);
+    // x = testClass(2);
+    // x = x+x;
+
+    // printf("WTF %d\n",x.getX());
 
     return 0;
 }

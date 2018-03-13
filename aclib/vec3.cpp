@@ -1,5 +1,10 @@
+/**Author: Un Hou (Albert) Chan
+ * Dependancy: "aclib.h"
+*/
+
 #include "vec3.h"
 #include "aclib.h"
+
 #include <math.h>
 
 #include <stdio.h>
