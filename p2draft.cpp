@@ -15,11 +15,14 @@
 #include "aclib/vec3.h"
 #include "aclib/aclib.h"
 
+//Constants
+#define PARTICLES_NUM 10000
+
 int   cube_exploded = 0;
 float angle = 0.0; // camera rotation angle
 
-Vec3f particleS[10000];
-Vec3f particleV[10000];
+Vec3f particleS[PARTICLES_NUM];
+Vec3f particleV[PARTICLES_NUM];
 
 
 void display (void);
@@ -27,7 +30,12 @@ void keyboard (unsigned char, int, int);
 void reshape (int, int);
 void idle (void);
 void explode_cube (void);
+//init lighting
 void init(void);
+//init particles data and srand
+void particleInit(void);
+//RNGesus
+float nextRand(void);
 
 void init(void)
 {
@@ -42,7 +50,7 @@ void init(void)
   GLfloat  light1Pos[4] =  { 0.0, 5.0, 5.0, 0.0 };
 
   glShadeModel(GL_SMOOTH);
-  glClearColor (0.5f, 0.5f, 0.5f, 0.0f);
+  glClearColor (0.0f, 0.0f, 0.0f, 0.0f);
   glClearDepth (1.0f);
   glEnable (GL_DEPTH_TEST);
   glDepthFunc (GL_LEQUAL);
@@ -64,9 +72,19 @@ void init(void)
   glEnable (GL_NORMALIZE);
 }
 
-void particleInit(){
-  for(int i=0; i<10000; i++) {
+float nextRand(void){
+  float ans = (float)rand()/(float)(RAND_MAX/0.1f)+0.00001f;
+  if (rand()%2 == 1)
+    ans *= -1.0;
+  return ans;
+}
+
+void particleInit(void){
+  srand((unsigned int)time(NULL));
+
+  for(int i=0; i<PARTICLES_NUM; i++) {
     particleS[i] = Vec3f();
+    particleV[i] = Vec3f(nextRand(),nextRand(),nextRand());
   }
 }
 
@@ -77,40 +95,25 @@ void display (void)
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity ();
 
-  glBegin(GL_POLYGON);
-    
-  glEnd();
-  
-  // glEnable (GL_LIGHT0);
-  // glEnable (GL_LIGHT1);
-  // glEnable (GL_DEPTH_TEST);
-
-  //
-  // Place the camera
   glTranslatef (0.0, 0.0, -10.0);
 
-  
-  
-
-  glRotatef (angle, 0.0, 1.0, 0.0);
-  //
   // If no explosion, draw cube
   if (!cube_exploded)
   {
+    glRotatef (angle, 0.0, 1.0, 0.0);
     glColor3f (1.0f, 0.0f, 0.0f);
     glutSolidCube (1.0);
-    glPushMatrix();
-    glLoadIdentity();
-    glTranslatef (0.0, 0.0, -10.0);
+  } 
+  else 
+  {
     glColor3f (1.0f, 1.0f, 0.0f);
-    glBegin(GL_POLYGON);
-      // // glNormal3f(-1.0f, 0.0f, 0.0f);
-      // glVertex3f(1.0f, 0.0f, 0.52f);
-      // glVertex3f(0.0f, 0.0f, 0.52f);
-      // glVertex3f(0.0f, 1.0f, 0.52f);
-
-    glEnd();
-    glPopMatrix();
+    for (int i=0; i<PARTICLES_NUM; i++){
+      glPushMatrix();
+        glTranslatef (particleS[i].x, particleS[i].y, particleS[i].z);
+        glutSolidCube (0.01);
+      glPopMatrix();
+      particleS[i] = particleS[i] + particleV[i];
+    }
   }
   glutSwapBuffers ();
 }
@@ -121,7 +124,7 @@ void keyboard (unsigned char key, int x, int y)
   {
     case ' ':
       explode_cube();
-      exit (0);
+      // exit (0);
     break;
     case 27:
       exit (0);

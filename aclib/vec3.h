@@ -51,13 +51,13 @@ class Vec3f
         friend Vec3f operator*(float n, const Vec3f& v);
         
         /**Get the unit vector w/ the same direction of this vector
-         * @return a new Vec3f unit vector
+         * @return a new Vec3f unit vector. Return *this if this vector is [0.0f, 0.0f, 0.0f]
         */
         Vec3f getUnit() const;
 
         /**EXPERIMENTAL! Unit vector using Fast Inverse Squareroot Algorithm
          * Reference: https://en.wikipedia.org/wiki/Fast_inverse_square_root
-         * @return a new Vec3f unit vector
+         * @return a new Vec3f unit vector. Return *this if this vector is [0.0f, 0.0f, 0.0f]
         */
         Vec3f getUnitFast() const;
 

@@ -1,6 +1,6 @@
 #include "aclib.h"
 
-float aclib::Q_rsqrt(float number){
+float aclib::fast_invsqrt(float number){
     // //type punning w/ union
     // union {
     //     float f;

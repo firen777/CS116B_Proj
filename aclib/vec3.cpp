@@ -50,6 +50,9 @@ Vec3f operator*(float n, const Vec3f& v){
 }
 
 Vec3f Vec3f::getUnit() const{
+    if (this->x==0.0f && this->y==0.0f && this->z==0.0f){
+        return *this;
+    }
     float length = this->x*this->x + this->y*this->y + this->z*this->z;
     length = sqrt(length);
 
@@ -58,9 +61,13 @@ Vec3f Vec3f::getUnit() const{
 }
 
 Vec3f Vec3f::getUnitFast() const{
+    if (this->x==0.0f && this->y==0.0f && this->z==0.0f){
+        return *this;
+    }
+
     float length = this->x*this->x + this->y*this->y + this->z*this->z;
     
-    Vec3f ans = this->scale(aclib::Q_rsqrt(length)); //weird negative bug when using union version. wtf?
+    Vec3f ans = this->scale(aclib::fast_invsqrt(length)); //weird negative bug when using union version. wtf?
     
     // printf("DEBUG:%f\n",(length));
     // float n = aclib::Q_rsqrt(length);

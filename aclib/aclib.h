@@ -11,5 +11,5 @@ namespace aclib{
      * good for C standard. may be undefined behavior in C++ but should be fine.
      * @return 1/sqrt(number)
     */
-    float Q_rsqrt( float number );
+    float fast_invsqrt( float number );
 }
