@@ -18,13 +18,15 @@
 //Constants
 #define PARTICLES_NUM 10000
 
+
+//Global var:
 int   cube_exploded = 0;
-float angle = 0.0; // camera rotation angle
+float angle = 0.0f; // camera rotation angle
+float particle_color = 1.0f; // particle color
+Vec3f particleS[PARTICLES_NUM]; //particle position S
+Vec3f particleV[PARTICLES_NUM]; //particle velocity V
 
-Vec3f particleS[PARTICLES_NUM];
-Vec3f particleV[PARTICLES_NUM];
-
-
+//function header
 void display (void);
 void keyboard (unsigned char, int, int);
 void reshape (int, int);
@@ -36,14 +38,18 @@ void init(void);
 void particleInit(void);
 //RNGesus
 float nextRand(void);
+//draw spinning cube
+void drawCube(void);
+//draw Particles
+void drawParticles(void);
 
 void init(void)
 {
   // Light sources
-  GLfloat  light0Amb[4] =  { 1.0, 0.6, 0.2, 1.0 };
-  GLfloat  light0Dif[4] =  { 1.0, 0.6, 0.2, 1.0 };   
-  GLfloat  light0Spec[4] = { 0.0, 0.0, 0.0, 1.0 };   
-  GLfloat  light0Pos[4] =  { 0.0, 0.0, 0.0, 1.0 };
+  // GLfloat  light0Amb[4] =  { 1.0, 0.6, 0.2, 1.0 };
+  // GLfloat  light0Dif[4] =  { 1.0, 0.6, 0.2, 1.0 };   
+  // GLfloat  light0Spec[4] = { 0.0, 0.0, 0.0, 1.0 };   
+  // GLfloat  light0Pos[4] =  { 0.0, 0.0, 0.0, 1.0 };
   GLfloat  light1Amb[4] =  { 0.0, 0.0, 0.0, 1.0 };
   GLfloat  light1Dif[4] =  { 1.0, 1.0, 1.0, 1.0 };   
   GLfloat  light1Spec[4] = { 1.0, 1.0, 1.0, 1.0 };   
@@ -60,10 +66,10 @@ void init(void)
   // glEnable (GL_LIGHT0);
   glEnable (GL_LIGHTING);
   glEnable (GL_LIGHT1);
-  glLightfv (GL_LIGHT0, GL_AMBIENT, light0Amb);
-  glLightfv (GL_LIGHT0, GL_DIFFUSE, light0Dif);
-  glLightfv (GL_LIGHT0, GL_SPECULAR, light0Spec);
-  glLightfv (GL_LIGHT0, GL_POSITION, light0Pos);
+  // glLightfv (GL_LIGHT0, GL_AMBIENT, light0Amb);
+  // glLightfv (GL_LIGHT0, GL_DIFFUSE, light0Dif);
+  // glLightfv (GL_LIGHT0, GL_SPECULAR, light0Spec);
+  // glLightfv (GL_LIGHT0, GL_POSITION, light0Pos);
   glLightfv (GL_LIGHT1, GL_AMBIENT, light1Amb);
   glLightfv (GL_LIGHT1, GL_DIFFUSE, light1Dif);
   glLightfv (GL_LIGHT1, GL_SPECULAR, light1Spec);
@@ -72,20 +78,63 @@ void init(void)
   glEnable (GL_NORMALIZE);
 }
 
-float nextRand(void){
+float nextRand(void)
+{
+  //0.00001f to 0.10001f
   float ans = (float)rand()/(float)(RAND_MAX/0.1f)+0.00001f;
+  // 50% +, 50% -
   if (rand()%2 == 1)
     ans *= -1.0;
   return ans;
 }
 
-void particleInit(void){
+void particleInit(void)
+{
   srand((unsigned int)time(NULL));
 
   for(int i=0; i<PARTICLES_NUM; i++) {
     particleS[i] = Vec3f();
     particleV[i] = Vec3f(nextRand(),nextRand(),nextRand());
   }
+}
+
+void drawCube(void)
+{
+  
+
+  
+
+  glRotatef (angle, 0.0, 1.0, 0.0);
+  glColor3f (1.0f, 0.0f, 0.0f);
+  glutSolidCube (1.0);
+
+
+
+  
+}
+
+void drawParticles(void)
+{
+  
+  if (particle_color > 0.0f)
+  {
+    glColor3f (particle_color, particle_color, 0.0f);
+    for (int i=0; i<PARTICLES_NUM; i++)
+    {
+      glPushMatrix();
+        glTranslatef (particleS[i].x, particleS[i].y, particleS[i].z);
+        glNormal3f(0.0f, 0.0f, 1.0f);
+        glBegin(GL_TRIANGLES);
+          glVertex3f(0.01f, 0.0f, 0.0f);
+          glVertex3f(0.01f, 0.01f, 0.0f);
+          glVertex3f(0.0f, 0.01f, 0.0f);
+        glEnd();
+
+      glPopMatrix();
+      particleS[i] = particleS[i] + particleV[i];
+    }
+  }
+  
 }
 
 void display (void)
@@ -100,20 +149,11 @@ void display (void)
   // If no explosion, draw cube
   if (!cube_exploded)
   {
-    glRotatef (angle, 0.0, 1.0, 0.0);
-    glColor3f (1.0f, 0.0f, 0.0f);
-    glutSolidCube (1.0);
+    drawCube();
   } 
   else 
   {
-    glColor3f (1.0f, 1.0f, 0.0f);
-    for (int i=0; i<PARTICLES_NUM; i++){
-      glPushMatrix();
-        glTranslatef (particleS[i].x, particleS[i].y, particleS[i].z);
-        glutSolidCube (0.01);
-      glPopMatrix();
-      particleS[i] = particleS[i] + particleV[i];
-    }
+    drawParticles();
   }
   glutSwapBuffers ();
 }
@@ -144,6 +184,8 @@ void reshape (int w, int h)
 void idle (void)
 {
   angle += 0.3;  /* Always continue to rotate the camera */
+  if (cube_exploded)
+    particle_color -= 0.005f;
   glutPostRedisplay ();
 }
 
