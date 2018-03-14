@@ -24,18 +24,6 @@ class Vec3f
         */
         float getL() const;
 
-        /**vector dot product, this dot v
-         * @param v
-         * @return a float
-        */
-        float dot(const Vec3f& v) const;
-
-        /**vector cross product, this X v
-         * @param v 
-         * @return a new Vec3f
-        */ 
-        Vec3f cross(const Vec3f& v) const;
-
         /**vector addition, this + v
          * @param v
          * @return a new Vec3f
@@ -43,12 +31,38 @@ class Vec3f
         Vec3f add(const Vec3f& v) const;
         friend Vec3f operator+(const Vec3f& a, const Vec3f& b);
 
+        /**Get the negative Vector -(this)
+         * @return -(this)
+        */
+        Vec3f getNeg() const;
+        /**vector subtraction
+        */
+        friend Vec3f operator-(const Vec3f& a, const Vec3f& b);
+
         /**vector scaling, nV
          * @return a new Vec3f
         */
         Vec3f scale(float n) const;
         friend Vec3f operator*(const Vec3f& v, float n);
         friend Vec3f operator*(float n, const Vec3f& v);
+
+        /**vector dot product, this dot v
+         * @param v
+         * @return a float
+        */
+        float dot(const Vec3f& v) const;
+        /**vector dot product, v1 dot v2
+        */
+        friend float operator*(const Vec3f& v1, const Vec3f& v2);
+        
+        /**vector cross product, this X v
+         * @param v 
+         * @return a new Vec3f
+        */ 
+        Vec3f cross(const Vec3f& v) const;
+        /**vector cross product, v1 X v2
+        */
+        friend Vec3f operator/(const Vec3f& v1, const Vec3f& v2);
         
         /**Get the unit vector w/ the same direction of this vector
          * @return a new Vec3f unit vector. Return *this if this vector is [0.0f, 0.0f, 0.0f]
@@ -60,6 +74,13 @@ class Vec3f
          * @return a new Vec3f unit vector. Return *this if this vector is [0.0f, 0.0f, 0.0f]
         */
         Vec3f getUnitFast() const;
+
+        /*Factory Methods
+          Produce i,j,k base Vectors.
+        */
+        static Vec3f iVec();
+        static Vec3f jVec();
+        static Vec3f kVec();
 
 
 };

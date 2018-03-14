@@ -15,18 +15,6 @@ float Vec3f::getL() const{
     return ans;
 }
 
-float Vec3f::dot(const Vec3f& v) const{
-    float ans = this->x * v.x;
-    ans += this->y * v.y;
-    ans += this->z * v.z;
-    return ans;
-}
-
-Vec3f Vec3f::cross(const Vec3f& v) const{
-    //TODO: Implement cross product
-    return Vec3f(1,2,3);
-}
-
 Vec3f Vec3f::add(const Vec3f& v) const{
     Vec3f ans(this->x + v.x, this->y + v.y, this->z + v.z);
     return ans;
@@ -34,6 +22,14 @@ Vec3f Vec3f::add(const Vec3f& v) const{
 
 Vec3f operator+(const Vec3f& a, const Vec3f& b){
     return a.add(b);
+}
+
+Vec3f Vec3f::getNeg() const{
+    return *this * -1.0f;
+}
+
+Vec3f operator-(const Vec3f& a, const Vec3f& b){
+    return a.add(b.getNeg());
 }
 
 Vec3f Vec3f::scale(float n) const{
@@ -47,6 +43,35 @@ Vec3f operator*(const Vec3f& v, float n){
 
 Vec3f operator*(float n, const Vec3f& v){
     return v.scale(n);
+}
+
+float Vec3f::dot(const Vec3f& v) const{
+    float ans = this->x * v.x;
+    ans += this->y * v.y;
+    ans += this->z * v.z;
+    return ans;
+}
+
+float operator*(const Vec3f& v1, const Vec3f& v2){
+    return v1.dot(v2);
+}
+
+Vec3f Vec3f::cross(const Vec3f& v) const{
+    Vec3f icomp = Vec3f::iVec();
+    Vec3f jcomp = Vec3f::jVec();
+    Vec3f kcomp = Vec3f::kVec();
+
+    icomp = icomp * (this->y*v.z - this->z*v.y);
+    jcomp = jcomp * (this->x*v.z - this->z*v.x);
+    kcomp = kcomp * (this->x*v.y - this->y*v.x);
+
+    Vec3f ans = icomp - jcomp + kcomp;
+
+    return ans;
+}
+
+Vec3f operator/(const Vec3f& v1, const Vec3f& v2){
+    return v1.cross(v2);
 }
 
 Vec3f Vec3f::getUnit() const{
@@ -82,3 +107,14 @@ Vec3f Vec3f::getUnitFast() const{
     return ans;
 }
 
+Vec3f Vec3f::iVec(){
+    return Vec3f(1.0, 0.0, 0.0);
+}
+
+Vec3f Vec3f::jVec(){
+    return Vec3f(0.0, 1.0, 0.0);
+}
+
+Vec3f Vec3f::kVec(){
+    return Vec3f(0.0, 0.0, 1.0);
+}

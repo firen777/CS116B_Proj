@@ -12,15 +12,26 @@ void printVec3ln(Vec3f v){
 int main(){
     Vec3f v1(1,-2,3);
     Vec3f v2(1,1,1);
-    printVec3ln(v1);
-    printf("v1 L: %f\n", v1.getL());
-    printVec3ln(v1+v2);
-    printVec3ln(v1*3);
-    printVec3ln(3*v1);
-    printf("v1 dot v2: %f\n", v1.dot(v2));
+    // printVec3ln(v1);
+    // printf("v1 L: %f\n", v1.getL());
+    // printVec3ln(v1+v2);
+    // printVec3ln(v1*3);
+    // printVec3ln(3*v1);
+    // printf("v1 dot v2: %f\n", v1.dot(v2));
 
-    printf("Qrsqrt: (0.111111, 0.25, 1): (%f,%f,%f)\n", aclib::Q_rsqrt(0.1111f),aclib::Q_rsqrt(0.25f),aclib::Q_rsqrt(1.0f));
+    // printf("fast_invsqrt: (0.111111, 0.25, 1): (%f,%f,%f)\n", aclib::fast_invsqrt(0.1111f),aclib::fast_invsqrt(0.25f),aclib::fast_invsqrt(1.0f));
 
+    Vec3f vi = Vec3f::iVec();
+    Vec3f vj = Vec3f::jVec();
+    Vec3f vk = Vec3f::kVec();
+
+    printVec3ln(vi);
+    printVec3ln(vj);
+    printVec3ln(vk);
+
+    printVec3ln(vi.cross(vj));
+    printVec3ln(vk.cross(vi));
+    printVec3ln(vj.cross(vk));
 
     Vec3f v4_1 = v1.getUnit();
     Vec3f v4_2 = v1.getUnitFast();
@@ -28,11 +39,10 @@ int main(){
     printVec3ln(v4_1);
     printVec3ln(v4_2);
 
-    // testClass x(1);
-    // x = testClass(2);
-    // x = x+x;
+    printVec3ln(v4_1.cross(v4_1));
 
-    // printf("WTF %d\n",x.getX());
+    printVec3ln(Vec3f(1,2,3).cross(Vec3f(4,5,6)));
+
 
     return 0;
 }
