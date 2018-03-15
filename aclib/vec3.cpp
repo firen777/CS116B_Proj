@@ -28,6 +28,10 @@ Vec3f Vec3f::getNeg() const{
     return *this * -1.0f;
 }
 
+Vec3f Vec3f::operator-() const{
+    return *this * -1.0f;
+}
+
 Vec3f operator-(const Vec3f& a, const Vec3f& b){
     return a.add(b.getNeg());
 }
@@ -118,3 +122,4 @@ Vec3f Vec3f::jVec(){
 Vec3f Vec3f::kVec(){
     return Vec3f(0.0, 0.0, 1.0);
 }
+

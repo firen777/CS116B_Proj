@@ -35,6 +35,7 @@ class Vec3f
          * @return -(this)
         */
         Vec3f getNeg() const;
+        Vec3f operator-() const;
         /**vector subtraction
         */
         friend Vec3f operator-(const Vec3f& a, const Vec3f& b);
@@ -82,7 +83,7 @@ class Vec3f
         static Vec3f jVec();
         static Vec3f kVec();
 
-
+        
 };
 
 /**
