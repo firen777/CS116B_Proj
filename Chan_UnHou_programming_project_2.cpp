@@ -23,8 +23,8 @@
 int   cube_exploded = 0;
 float angle = 0.0f; // camera rotation angle
 float particle_color = 1.0f; // particle color
-Vec3f particleS[PARTICLES_NUM]; //particle position S
-Vec3f particleV[PARTICLES_NUM]; //particle velocity V
+Vec3f* particleS = new Vec3f[PARTICLES_NUM]; //particle position S
+Vec3f* particleV = new Vec3f[PARTICLES_NUM]; //particle velocity V
 
 //function header
 void display (void);
@@ -167,6 +167,8 @@ void keyboard (unsigned char key, int x, int y)
       // exit (0);
     break;
     case 27:
+      delete [] particleS;
+      delete [] particleV;
       exit (0);
     break;
     case 'r':
