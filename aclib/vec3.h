@@ -6,6 +6,22 @@
 #include "aclib.h"
 
 /**3D Vector, float version
+ * Constructor:
+ * Vec3f(x,y,z);
+ * Vec3f(); Default constructor with vector(0,0,0)
+ * 
+ * Methods:
+ * float getL(); get Length of vector
+ * Vec3f getUnit(); get the unit vector with the same direction
+ * static iVec(), jVec(), kVec(); factory method for i,j,k vector.
+ * 
+ * Overloaded Operators:
+ * Vec3f operator+(Vec3f, Vec3f); Vector addition
+ * Vec3f operator-(Vec3f, Vec3f); Vector subtraction, or adding opposite vector
+ * Vec3f operator-(Vec3f); opposite vector
+ * Vec3f operator*(Vec3f, float) or (float, Vec3f); Vector scaling
+ * float operator*(Vec3f, Vec3f); dot product
+ * Vec3f operator/(Vec3f, Vec3f); cross product
 */
 class Vec3f
 {
