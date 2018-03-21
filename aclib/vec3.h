@@ -1,18 +1,21 @@
 /**Author: Un Hou (Albert) Chan
  * Custom made 3D vector class
- * Dependancy: "aclib.h"
+ * Dependancy: "aclib.h", "point3.h"
 */
 #pragma once
 #include "aclib.h"
+#include "point3.h"
 
 /**3D Vector, float version
  * Constructor:
  * Vec3f(x,y,z);
  * Vec3f(); Default constructor with vector(0,0,0)
+ * Vec3f(p); Point3f to Vec3f
+ * Vec3f(p1, p2); 2 Point3f to Vec3f 
  * 
  * Methods:
  * float getL(); get Length of vector
- * Vec3f getUnit(); get the unit vector with the same direction
+ * Vec3f getUnit(); get the unit vector with the same direction, AKA normalized vector
  * static iVec(), jVec(), kVec(); factory method for i,j,k vector.
  * 
  * Overloaded Operators:
@@ -32,8 +35,14 @@ class Vec3f
     public:
         /*Constructors
         */
-        Vec3f(float _x, float _y, float _z):x(_x), y(_y), z(_z){}
-        Vec3f():x(0.0f), y(0.0f), z(0.0f){}
+        Vec3f(float _x, float _y, float _z):
+            x(_x), y(_y), z(_z){}
+        Vec3f():
+            x(0.0f), y(0.0f), z(0.0f){}
+        Vec3f(const Point3f& p):
+            x(p.x), y(p.y), z(p.z){}
+        Vec3f(const Point3f& p1, const Point3f& p2): 
+            x(p2.x-p1.x), y(p2.y-p1.y), z(p2.z-p1.z){}
 
         /**Get Length of Vector
          * @return length
@@ -92,14 +101,17 @@ class Vec3f
         */
         Vec3f getUnitFast() const;
 
-        /*Factory Methods
-          Produce i,j,k base Vectors.
+        /*Produce i,j,k base Vectors.
+        */
+        /**@deprecated static allocation only. Please use constructor.
         */
         static Vec3f iVec();
+        /**@deprecated static allocation only. Please use constructor.
+        */
         static Vec3f jVec();
+        /**@deprecated static allocation only. Please use constructor.
+        */
         static Vec3f kVec();
-
-        
 };
 
 /**
