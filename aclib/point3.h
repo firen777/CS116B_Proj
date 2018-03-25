@@ -7,7 +7,7 @@
 #include "aclib.h"
 
 /**3D Point, float version
- * 
+ * @deprecated, Vec3f is sufficent
 */
 class Point3f
 {

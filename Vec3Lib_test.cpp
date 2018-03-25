@@ -40,7 +40,16 @@ int main(){
 
     printVec3ln(Vec3f(p1));
     printVec3ln(Vec3f(p1,p2));
-    
+
+    v1 = Vec3f(0,0,0);
+    v2 = Vec3f(2,0,0);
+    v3 = Vec3f(0,3,0);
+    printVec3ln(Vec3f(v1,v2,v3));
+
+    v1 = Vec3f(1,0,0);
+    v2 = Vec3f(2,0,0);
+    v3 = Vec3f(0,0,4);
+    printVec3ln(Vec3f(v1,v2,v3));
 
     return 0;
 }

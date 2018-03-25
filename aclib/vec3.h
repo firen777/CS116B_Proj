@@ -10,8 +10,11 @@
  * Constructor:
  * Vec3f(x,y,z);
  * Vec3f(); Default constructor with vector(0,0,0)
- * Vec3f(p); Point3f to Vec3f
- * Vec3f(p1, p2); 2 Point3f to Vec3f 
+ * Vec3f(v1,v2); 2 Point to 1 Vector
+ * Vec3f(v1,v2,v3); Normal vector of the triangle form from 3 points (counter clockwise: v1,v2,v3)
+ * 
+ * Vec3f(p); DEPRECATED
+ * Vec3f(p1, p2); DEPRECATED
  * 
  * Methods:
  * float getL(); get Length of vector
@@ -39,8 +42,19 @@ class Vec3f
             x(_x), y(_y), z(_z){}
         Vec3f():
             x(0.0f), y(0.0f), z(0.0f){}
+        Vec3f(const Vec3f& v1, const Vec3f& v2):
+            x(v2.x-v1.x), y(v2.y-v1.y), z(v2.z-v1.z){}
+        Vec3f(const Vec3f& v1, const Vec3f& v2, const Vec3f& v3) {
+            Vec3f ans = (v2-v1)/(v3-v1);
+            x = ans.x;
+            y = ans.y;
+            z = ans.z;
+        }
+
+        /**@deprecated*/
         Vec3f(const Point3f& p):
             x(p.x), y(p.y), z(p.z){}
+        /**@deprecated*/
         Vec3f(const Point3f& p1, const Point3f& p2): 
             x(p2.x-p1.x), y(p2.y-p1.y), z(p2.z-p1.z){}
 
@@ -91,13 +105,13 @@ class Vec3f
         friend Vec3f operator/(const Vec3f& v1, const Vec3f& v2);
         
         /**Get the unit vector w/ the same direction of this vector
-         * @return a new Vec3f unit vector. Return *this if this vector is [0.0f, 0.0f, 0.0f]
+         * @return a new Vec3f unit vector. Return (0,0,0) if this vector is [0.0f, 0.0f, 0.0f]
         */
         Vec3f getUnit() const;
 
         /**EXPERIMENTAL! Unit vector using Fast Inverse Squareroot Algorithm
          * Reference: https://en.wikipedia.org/wiki/Fast_inverse_square_root
-         * @return a new Vec3f unit vector. Return *this if this vector is [0.0f, 0.0f, 0.0f]
+         * @return a new Vec3f unit vector. Return (0,0,0) if this vector is [0.0f, 0.0f, 0.0f]
         */
         Vec3f getUnitFast() const;
 

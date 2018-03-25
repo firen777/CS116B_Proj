@@ -80,7 +80,7 @@ Vec3f operator/(const Vec3f& v1, const Vec3f& v2){
 
 Vec3f Vec3f::getUnit() const{
     if (this->x==0.0f && this->y==0.0f && this->z==0.0f){
-        return *this;
+        return Vec3f(0.0f,0.0f,0.0f);
     }
     float length = this->x*this->x + this->y*this->y + this->z*this->z;
     length = sqrt(length);
@@ -91,7 +91,7 @@ Vec3f Vec3f::getUnit() const{
 
 Vec3f Vec3f::getUnitFast() const{
     if (this->x==0.0f && this->y==0.0f && this->z==0.0f){
-        return *this;
+        return Vec3f(0.0f,0.0f,0.0f);
     }
 
     float length = this->x*this->x + this->y*this->y + this->z*this->z;
