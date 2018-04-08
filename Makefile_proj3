@@ -1,4 +1,5 @@
 CC = gcc
+#CC = g++
 
 # define any compile-time flags
 CFLAGS = -Wno-deprecated-declarations

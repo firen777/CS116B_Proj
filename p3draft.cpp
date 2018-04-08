@@ -37,33 +37,117 @@
    *  acceleration a,
   */
   class Particle {
-    public:
+    private:
       Vec3f s; //Current Position
       Vec3f s_prev; //Previous Position
       Vec3f a;
       int fixed; //to indicate whether the point is fixed or not
     public:
-      void verletStep(float dT); //stepping w/ verlet integration
-      void accumilateA(Vec3f a); //acceleration accumilation
+      /**Constructor
+       * @param const Vec3f& _s, initial position of particle
+      */
+      Particle(const Vec3f& _s, int _fixed = FALSE){
+        s = _s;
+        s_prev = _s;
+        a = Vec3f();
+        fixed = _fixed;
+      }
+      /**Constructor
+       * @param float x,y,z; initial position of particle
+      */
+      Particle(float x, float y, float z, int _fixed = FALSE){
+        s = Vec3f(x,y,z);
+        s_prev = Vec3f(x,y,z);
+        a = Vec3f();
+        fixed = _fixed;
+      }
+
+      /**stepping w/ verlet integration
+       * update s and s_prev
+       * reset a in the process
+       * @param float dT timestep
+      */
+      void verletStep(float dT) {
+        if (fixed != 1) {
+          Vec3f temp = s;
+          s = 2*s - s_prev + a*dT*dT;
+          s_prev = temp;
+        }
+        a = Vec3f();
+      }
+      
+      //**********Mutators**********//
+      /**Accumilate acceleration for next timestep update
+       * @param Vec3f _a; acceleration
+      */
+      void accumilateA(Vec3f _a){
+        a = a + _a;
+      }
+      /**set s*/
+      void setS(Vec3f _s){
+        s = _s;
+      }
+      /**set s_prev*/
+      void setS_prev(Vec3f _s_prev){
+        s_prev = _s_prev;
+      }
+
+      //**********Accessors**********//
+      Vec3f getS(){
+        return s;
+      }
+
+
   };
 
   /**SolidObject Interface is for object that can be collided with
-   * 
+   * TODO: TO BE FINISHED
   */
   class SolidObject {
     public:
       virtual Vec3f surfaceNormal (Vec3f collision_point) = 0;
   };
 
-  class Spring {
+  //TODO: TO BE FINISHED
+  class SolidBall:SolidObject {
+    private:
+      Vec3f center;
     public:
-      Particle head;
-      Particle end;
+      SolidBall(Vec3f _center):center(_center){}
+      Vec3f surfaceNormal (Vec3f collision_point){
+        return Vec3f();
+      }
+
+  };
+
+  /**Spring class descript spring between 2 Particle*/
+  class Spring {
+    private:
+      Particle* head;
+      Particle* end;
       float k;
       float l;
     public:
-      void springAct();
-  }
+      Spring(Particle* _head, Particle* _end):head(_head), end(_end), k(1), l(15){}
+
+      /**Hooke's Law, F=kx; a=(k/m)x.
+       * Since we only care about acceleration here,
+       * let (k/m) be another constant.
+       * 
+       * invoke accumilateA on both head and end
+      */
+      void springAct(){
+        Vec3f direction = end->getS() - head->getS();
+        float currL = direction.getL;
+        Vec3f x = (currL - l) * direction;
+        head->accumilateA(k*x);
+        end->accumilateA(-k*x);
+      }
+  };
+
+  class PhysSystem {
+
+  };
 // **********************
 
 
@@ -131,14 +215,8 @@ void init (void)
   glLightModeli (GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 }
 
-
-
-
-
 void display (void)
 {
-  int x;
-
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity ();
   glDisable (GL_LIGHTING);
