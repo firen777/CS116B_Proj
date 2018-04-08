@@ -1,7 +1,10 @@
+//standard lib
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+//GLUT include thingy
 #ifdef __APPLE__
   #include <OpenGL/gl.h>
   #include <OpenGL/glu.h>
@@ -11,27 +14,80 @@
   #include <GL/glut.h> 
 #endif
 
+//Custom Library
+#include "aclib/vec3.h"
+
+
+// * Constants *
+  #define BALL_POSITION_X 6
+  #define BALL_POSITION_Y -2
+  #define BALL_POSITION_Z 0
+  #define BALL_RADIUS 0.75
+  #define TRUE 1
+  #define FALSE 0
+
+  #define GRAVITY 1.0f
+// *************
+
+// * Class Declarations *
+  /**Particle class is the mathematicle model and data for a particle
+   * member: 
+   *  position s: Current Position to be drawn
+   *  previous position s_prev: Previous position. Used for Verlet
+   *  acceleration a,
+  */
+  class Particle {
+    public:
+      Vec3f s; //Current Position
+      Vec3f s_prev; //Previous Position
+      Vec3f a;
+    public:
+      void step(float dT); //Verlet 
+
+  };
+// **********************
 
 
 
-#define BALL_POSITION_X 6
-#define BALL_POSITION_Y -2
-#define BALL_POSITION_Z 0
-#define BALL_RADIUS 0.75
-#define TRUE 1
-#define FALSE 0
 
 
+// * GLOBAL variables and Objects.
+  int pause = TRUE;
 
 
-// *************************************************************************************
-// * GLOBAL variables. Not ideal but necessary to get around limitatins of GLUT API... *
-// *************************************************************************************
-int pause = TRUE;
+// ****************
 
 
-float angleTEST = 0.0f;
+// * Function prototypes *
 
+  /** Main function */
+  int main (int argc, char *argv[]);
+  /** Initialize Lighting and Stuffs */
+  void init (void);
+  /** Display callback for GLUT */
+  void display (void);
+  /** Reshape callback for GLUT */
+  void reshape (int w, int h);
+  /** Keyboard callback for GLUT */
+  void keyboard (unsigned char key, int x, int y);
+  /** Arrow callback for GLUT */
+  void arrow_keys (int a_keys, int x, int y); 
+
+// ***********************
+
+int main (int argc, char *argv[]) 
+{
+  glutInit (&argc, argv);
+  glutInitDisplayMode (GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH); 
+  glutInitWindowSize (1280, 720 ); 
+  glutCreateWindow ("Rope simulator");
+  init ();
+  glutDisplayFunc (display);  
+  glutReshapeFunc (reshape);
+  glutKeyboardFunc (keyboard);
+  glutSpecialFunc (arrow_keys);
+  glutMainLoop ();
+}
 
 void init (void)
 {
@@ -67,13 +123,13 @@ void display (void)
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity ();
   glDisable (GL_LIGHTING);
-  glBegin (GL_POLYGON);
-  glColor3f (0.8f, 0.8f, 1.0f);
-    // glVertex3f (-200.0f, -100.0f, -100.0f);
-    // glVertex3f (200.0f, -100.0f, -100.0f);
-    // glColor3f (0.4f, 0.4f, 0.8f);	
-    // glVertex3f (200.0f, 100.0f, -100.0f);
-    // glVertex3f (-200.0f, 100.0f, -100.0f);
+  glBegin (GL_POLYGON); //Skyblue Background 
+    glColor3f (0.8f, 0.8f, 1.0f);
+    glVertex3f (-200.0f, -100.0f, -100.0f);
+    glVertex3f (200.0f, -100.0f, -100.0f);
+    glColor3f (0.4f, 0.4f, 0.8f);	
+    glVertex3f (200.0f, 100.0f, -100.0f);
+    glVertex3f (-200.0f, 100.0f, -100.0f);
   glEnd ();
   glEnable (GL_LIGHTING);
   glTranslatef (-6.5, 6, -9.0f); // move camera out and center on the rope
@@ -81,9 +137,9 @@ void display (void)
   glPushMatrix ();
   glTranslatef (BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z);
   glColor3f (1.0f, 1.0f, 0.0f);
-  glLineWidth(10);
   glutSolidSphere (BALL_RADIUS - 0.1, 50, 50); // draw the ball, but with a slightly lower radius, otherwise we could get ugly visual artifacts of rope penetrating the ball slightly
-  // glNormal3f(0.0f, 0.0f, 1.0f);
+  glLineWidth(10);
+  glNormal3f(0.0f, 0.0f, 1.0f);
   glBegin(GL_LINES);
     glVertex3f(0, 0, 0);
     glVertex3f(10, 0, 0);
@@ -156,17 +212,5 @@ void arrow_keys (int a_keys, int x, int y)
 
 
 
-int main (int argc, char *argv[]) 
-{
-  glutInit (&argc, argv);
-  glutInitDisplayMode (GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH); 
-  glutInitWindowSize (1280, 720 ); 
-  glutCreateWindow ("Rope simulator");
-  init ();
-  glutDisplayFunc (display);  
-  glutReshapeFunc (reshape);
-  glutKeyboardFunc (keyboard);
-  glutSpecialFunc (arrow_keys);
-  glutMainLoop ();
-}
+
 
