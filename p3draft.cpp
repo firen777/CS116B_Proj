@@ -41,10 +41,29 @@
       Vec3f s; //Current Position
       Vec3f s_prev; //Previous Position
       Vec3f a;
+      int fixed; //to indicate whether the point is fixed or not
     public:
-      void step(float dT); //Verlet 
-
+      void verletStep(float dT); //stepping w/ verlet integration
+      void accumilateA(Vec3f a); //acceleration accumilation
   };
+
+  /**SolidObject Interface is for object that can be collided with
+   * 
+  */
+  class SolidObject {
+    public:
+      virtual Vec3f surfaceNormal (Vec3f collision_point) = 0;
+  };
+
+  class Spring {
+    public:
+      Particle head;
+      Particle end;
+      float k;
+      float l;
+    public:
+      void springAct();
+  }
 // **********************
 
 
