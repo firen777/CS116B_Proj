@@ -1,3 +1,7 @@
+/**Framerate independant animation reference:
+ * http://hdrlab.org.nz/articles/amiga-os-articles/minigl-templates/frame-rate-independent-animation-using-glut/
+*/
+
 //standard lib
 #include <math.h>
 #include <stdio.h>
@@ -106,6 +110,7 @@
   class SolidObject {
     public:
       virtual Vec3f surfaceNormal (Vec3f collision_point) = 0;
+      virtual bool isHit (Vec3f check_point) = 0;
   };
 
   //TODO: TO BE FINISHED
@@ -113,9 +118,20 @@
     private:
       Vec3f center;
     public:
+      /**Constructor*/
       SolidBall(Vec3f _center):center(_center){}
-      Vec3f surfaceNormal (Vec3f collision_point){
-        return Vec3f();
+      /**Return surface normal of collision point
+       * @param collision_point point to check against
+       * @return Unit vector of the surface normal
+      */
+      Vec3f surfaceNormal (Vec3f collision_point) override {
+        return (collision_point - center).getUnit();
+      }
+      /**
+       * 
+      */
+      bool isHit (Vec3f check_point) override {
+
       }
 
   };
@@ -176,6 +192,14 @@
   /** Arrow callback for GLUT */
   void arrow_keys (int a_keys, int x, int y); 
 
+  //Drawing function
+  void drawBackground();
+  void drawBall();
+  void drawRope();
+
+  /** animate */
+
+
 // ***********************
 
 int main (int argc, char *argv[]) 
@@ -220,14 +244,7 @@ void display (void)
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity ();
   glDisable (GL_LIGHTING);
-  glBegin (GL_POLYGON); //Skyblue Background 
-    glColor3f (0.8f, 0.8f, 1.0f);
-    glVertex3f (-200.0f, -100.0f, -100.0f);
-    glVertex3f (200.0f, -100.0f, -100.0f);
-    glColor3f (0.4f, 0.4f, 0.8f);	
-    glVertex3f (200.0f, 100.0f, -100.0f);
-    glVertex3f (-200.0f, 100.0f, -100.0f);
-  glEnd ();
+  
   glEnable (GL_LIGHTING);
   glTranslatef (-6.5, 6, -9.0f); // move camera out and center on the rope
   // glTranslatef (6.5, 6, -9.0f);
@@ -246,10 +263,6 @@ void display (void)
   glutPostRedisplay();
 }
 
-
-
-
-
 void reshape (int w, int h)  
 {
   glViewport (0, 0, w, h);
@@ -267,10 +280,6 @@ void reshape (int w, int h)
   glLoadIdentity (); 
 }
 
-
-
-
-
 void keyboard (unsigned char key, int x, int y) 
 {
   switch (key) 
@@ -285,10 +294,6 @@ void keyboard (unsigned char key, int x, int y)
     break;
   }
 }
-
-
-
-
 
 void arrow_keys (int a_keys, int x, int y) 
 {
@@ -305,9 +310,21 @@ void arrow_keys (int a_keys, int x, int y)
   }
 }
 
+void drawBackground(){
+  glBegin (GL_POLYGON); //Skyblue Background 
+    glColor3f (0.8f, 0.8f, 1.0f);
+    glVertex3f (-200.0f, -100.0f, -100.0f);
+    glVertex3f (200.0f, -100.0f, -100.0f);
+    glColor3f (0.4f, 0.4f, 0.8f);	
+    glVertex3f (200.0f, 100.0f, -100.0f);
+    glVertex3f (-200.0f, 100.0f, -100.0f);
+  glEnd ();
+}
 
+void drawBall(){
 
+}
 
+void drawRope(){
 
-
-
+}
