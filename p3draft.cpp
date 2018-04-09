@@ -21,7 +21,6 @@
 //Custom Library
 #include "aclib/vec3.h"
 
-
 // * Constants *
   #define BALL_POSITION_X 6
   #define BALL_POSITION_Y -2
@@ -31,6 +30,8 @@
   #define FALSE 0
 
   #define GRAVITY 1.0f
+  #define TIMERMSECS 33 // 33 ms per timer step
+  #define TIMESTEP 0.033f  // 0.033 s per time step, ideally
 // *************
 
 // * Class Declarations *
@@ -95,6 +96,10 @@
       void setS_prev(Vec3f _s_prev){
         s_prev = _s_prev;
       }
+      /**set s_prev according to desired v*/
+      void setV(Vec3f v) {
+        s_prev = s - v*(TIMESTEP);
+      }
 
       //**********Accessors**********//
       Vec3f getS(){
@@ -116,10 +121,11 @@
   //TODO: TO BE FINISHED
   class SolidBall:SolidObject {
     private:
-      Vec3f center;
+      Vec3f c;
+      float r;
     public:
       /**Constructor*/
-      SolidBall(Vec3f _center):center(_center){}
+      SolidBall(Vec3f _center, float _radius):c(_center), r(_radius){}
       /**Return surface normal of collision point
        * @param collision_point point to check against
        * @return Unit vector of the surface normal
@@ -131,8 +137,11 @@
        * 
       */
       bool isHit (Vec3f check_point) override {
-
+        if ((check_point - c).getL() < r)
+          return TRUE;
+        return FALSE;
       }
+
 
   };
 
@@ -166,12 +175,12 @@
   };
 // **********************
 
-
-
-
-
 // * GLOBAL variables and Objects.
   int pause = TRUE;
+  //timer
+  int startTime; 
+  int prevTime;
+
 
 
 // ****************
@@ -197,8 +206,8 @@
   void drawBall();
   void drawRope();
 
-  /** animate */
-
+  /** animate function for time based animation */
+  void animate(int value);
 
 // ***********************
 
@@ -327,4 +336,25 @@ void drawBall(){
 
 void drawRope(){
 
+}
+
+void animate(int value){
+  // Set up the next timer tick (do this first)
+    glutTimerFunc(TIMERMSECS, animate, 0);
+
+	// Measure the elapsed time
+	int currTime = glutGet(GLUT_ELAPSED_TIME);
+	int timeSincePrevFrame = currTime - prevTime;
+	int elapsedTime = currTime - startTime;
+
+	// ##### REPLACE WITH YOUR OWN GAME/APP MAIN CODE HERE #####
+
+	// ##### END OF GAME/APP MAIN CODE #####
+
+	
+
+	// Force a redisplay to render the new image
+	glutPostRedisplay();
+
+	prevTime = currTime;
 }
