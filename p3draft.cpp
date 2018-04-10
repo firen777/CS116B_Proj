@@ -114,33 +114,48 @@
   */
   class SolidObject {
     public:
+      /**Return surface normal given collision point
+       * @param collision_point point to check against
+       * @return Unit vector of the surface normal
+      */
       virtual Vec3f surfaceNormal (Vec3f collision_point) = 0;
+      /**Check if the a vertex collide w/ the object or not*/
       virtual bool isHit (Vec3f check_point) = 0;
+      /**Return surface normal given collision particle
+       * useful when particle is a sphere instead of a point
+       * @param p Particle to check against
+       * @return Unit vector of the surface normal
+      */
+      virtual Vec3f surfaceNormal (Particle p) = 0;
+      /**Check if the a Particle collide w/ the object or not
+       * useful when particle is a sphere instead of a point
+      */
+      virtual bool isHit (Particle p) = 0;
   };
 
   //TODO: TO BE FINISHED
   class SolidBall:SolidObject {
-    private:
-      Vec3f c;
+    public:
       float r;
+      Vec3f c;
     public:
       /**Constructor*/
       SolidBall(Vec3f _center, float _radius):c(_center), r(_radius){}
-      /**Return surface normal of collision point
-       * @param collision_point point to check against
-       * @return Unit vector of the surface normal
-      */
+      
       Vec3f surfaceNormal (Vec3f collision_point) override {
-        return (collision_point - center).getUnit();
+        return (collision_point - c).getUnit();
       }
-      /**
-       * 
-      */
+      
       bool isHit (Vec3f check_point) override {
         if ((check_point - c).getL() < r)
           return TRUE;
         return FALSE;
       }
+      
+      Vec3f surfaceNormal (Particle p) override {
+
+      }
+
 
 
   };
