@@ -33,11 +33,11 @@
   #define FALSE 0
 
   #define GRAVITY 0.1f
-  #define TIMERMSECS 33 // 33 ms per timer step
-  #define TIMESTEP 0.033f  // 0.033 s per time step, ideally
+  #define TIMERMSECS 11 // 33 ms per timer step
+  #define TIMESTEP 0.011f  // 0.033 s per time step, ideally
 
-  #define SPRING_L 10
-  #define SPRING_K 1
+  #define SPRING_L 8.0f
+  #define SPRING_K 0.1f
 
   #define PART_COUNT 10
   #define PART_RADIUS 0.5f
@@ -85,7 +85,7 @@
        * @param float dT timestep
       */
       void verletStep(float dT) {
-        if (fixed != 1) {
+        if (fixed != TRUE) {
           Vec3f temp = s;
           s = 2*s - s_prev + a*dT*dT;
           s_prev = temp;
@@ -198,7 +198,7 @@
         if (head!=NULL && end!=NULL){
           Vec3f direction = end->s - head->s;
           float currL = direction.getL();
-          Vec3f x = (currL - l) * direction;
+          Vec3f x = (currL - l) * direction.getUnit();
           head->accumA(k*x);
           end->accumA(-k*x);
         }
@@ -251,7 +251,7 @@
         Vec3f part_position = _head;
         int fixed = FALSE;
         for (int i=0; i<part_count; i++) {
-          fixed = TRUE ? FALSE : (i==0 || i==part_count); //fix first and last particles
+          fixed = (i==0 || i==part_count-1)? TRUE : FALSE ; //fix first and last particles
           part_list[i] = Particle(part_position, PART_RADIUS, fixed);
 
           part_position = part_position + head_end_direction * segment_length;
@@ -292,12 +292,14 @@
         for (int i=0; i<part_count; i++){
           p = part_list[i].s;
           p_r = part_list[i].r;
+
+          printf("part%d: (%f,%f,%f),%f, %d \n", i, p.x, p.y, p.z, p_r, part_list[i].fixed);
+
           glPushMatrix();
             glTranslatef(p.x, p.y, p.z);
             glutSolidSphere(p_r, 10, 10);
           glPopMatrix();
         }
-
         //draw rope segment
         Vec3f p1;
         Vec3f p2;
@@ -305,7 +307,7 @@
         for (int i=0; i<spring_count; i++){
           p1 = spring_list[i].head->s;
           p2 = spring_list[i].end ->s;
-          glBegin(GL_LINE);
+          glBegin(GL_LINES);
             glVertex3f(p1.x, p1.y, p1.z);
             glVertex3f(p2.x, p2.y, p2.z);
           glEnd();
@@ -336,6 +338,8 @@
 
   //tester
   Particle p1(Vec3f(BALL_POSITION_X-30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
+  Particle p2(Vec3f(BALL_POSITION_X+30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
+  Spring s12(&p1, &p2);
 
   
 // ****************
@@ -368,7 +372,18 @@
 // ***********************
 
 void testDraw(){
+  glColor3f(1.0f,0,0);
+  glPushMatrix();
+    glTranslatef(p1.s.x, p1.s.y, p1.s.z);
+    glutSolidSphere(p1.r, 10, 10);
+  glPopMatrix();
+
+  glPushMatrix();
+    glTranslatef(p2.s.x, p2.s.y, p2.s.z);
+    glutSolidSphere(p2.r, 10, 10);
+  glPopMatrix();
   
+
 }
 
 int main (int argc, char *argv[]) 
@@ -426,6 +441,7 @@ void display (void)
   // glTranslatef (-6.5, 0, -4.0f); // move camera out and center on the rope
 
   global_sys.drawAll(0.0f, 0.5f, 0.0f);
+  testDraw();
 
   glutSwapBuffers();
   glutPostRedisplay();
@@ -501,7 +517,7 @@ void animate(int value){
 	int elapsedTime = currTime - startTime;
 
 	// ##### REPLACE WITH YOUR OWN GAME/APP MAIN CODE HERE #####
-  global_sys.timestep(elapsedTime);
+  global_sys.timestep(elapsedTime/1000.0);
 	// ##### END OF GAME/APP MAIN CODE #####
 
 	
