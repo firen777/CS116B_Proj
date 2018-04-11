@@ -1,4 +1,5 @@
-/**Framerate independant animation reference:
+/**Author: Un Hou Chan
+ * Framerate independant animation reference:
  * http://hdrlab.org.nz/articles/amiga-os-articles/minigl-templates/frame-rate-independent-animation-using-glut/
 */
 
@@ -29,44 +30,53 @@
   #define TRUE 1
   #define FALSE 0
 
-  #define GRAVITY 1.0f
+  #define GRAVITY 0.1f
   #define TIMERMSECS 33 // 33 ms per timer step
   #define TIMESTEP 0.033f  // 0.033 s per time step, ideally
+
+  #define SPRING_L 10
+  #define SPRING_K 1
+
+  #define PART_COUNT 10
+  #define PART_RADIUS 0.01f
 // *************
 
 // * Class Declarations *
   /**Particle class is the mathematicle model and data for a particle
-   * member: 
-   *  position s: Current Position to be drawn
-   *  previous position s_prev: Previous position. Used for Verlet
-   *  acceleration a,
+   * member var: 
+   *  s: Current Position to be drawn
+   *  s_prev: Previous position. Used for Verlet
+   *  r: collision radius of the particle
+   *  a: acceleration that will be used in Verlet integration during next timestep. Reset after integration.
+   *  fixed: indicate whether the particle is fixed or not
+   * member func:
+   *  verletStep(float dT): Verlet integrate the current position 
+   *    as well as replace s_prev and resetting a. Fixed particle have no effect.
+   *  accumA(Vec3f _a): Accumilating a via simple vector addition
+   *  setV(Vec3f v): EXPERIMENTAL: hacky way to mimick velocity by manipulating the s_prev accordingly.
+   *  
   */
   class Particle {
-    private:
+    public:
       Vec3f s; //Current Position
       Vec3f s_prev; //Previous Position
+      float r;
       Vec3f a;
       int fixed; //to indicate whether the point is fixed or not
+      
     public:
       /**Constructor
        * @param const Vec3f& _s, initial position of particle
       */
-      Particle(const Vec3f& _s, int _fixed = FALSE){
-        s = _s;
-        s_prev = _s;
-        a = Vec3f();
-        fixed = _fixed;
-      }
+      Particle(const Vec3f& _s, float _r, int _fixed = FALSE): 
+        s(_s), s_prev(_s), r(_r), a(Vec3f()), fixed(_fixed){}
       /**Constructor
        * @param float x,y,z; initial position of particle
       */
-      Particle(float x, float y, float z, int _fixed = FALSE){
-        s = Vec3f(x,y,z);
-        s_prev = Vec3f(x,y,z);
-        a = Vec3f();
-        fixed = _fixed;
-      }
-
+      Particle(float x, float y, float z, float _r, int _fixed = FALSE):
+        s(Vec3f(x,y,z)), s_prev(Vec3f(x,y,z)), r(_r), a(Vec3f()), fixed(_fixed){}
+      /**Default Constructor, set everything to 0*/
+      Particle():s(Vec3f()),s_prev(Vec3f()),r(0.0f),a(Vec3f()),fixed(FALSE){}
       /**stepping w/ verlet integration
        * update s and s_prev
        * reset a in the process
@@ -79,97 +89,101 @@
           s_prev = temp;
         }
         a = Vec3f();
-      }
-      
-      //**********Mutators**********//
+      }      
       /**Accumilate acceleration for next timestep update
        * @param Vec3f _a; acceleration
       */
-      void accumilateA(Vec3f _a){
+      void accumA(const Vec3f& _a){
         a = a + _a;
       }
-      /**set s*/
-      void setS(Vec3f _s){
-        s = _s;
-      }
-      /**set s_prev*/
-      void setS_prev(Vec3f _s_prev){
-        s_prev = _s_prev;
-      }
-      /**set s_prev according to desired v*/
-      void setV(Vec3f v) {
+
+      /** set s_prev according to desired v */
+      void setV(const Vec3f& v) {
         s_prev = s - v*(TIMESTEP);
       }
 
-      //**********Accessors**********//
-      Vec3f getS(){
-        return s;
-      }
-
-
   };
 
-  /**SolidObject Interface is for object that can be collided with
-   * TODO: TO BE FINISHED
-  */
+  /**SolidObject Interface is for object that can be collided with*/
   class SolidObject {
     public:
       /**Return surface normal given collision point
        * @param collision_point point to check against
        * @return Unit vector of the surface normal
       */
-      virtual Vec3f surfaceNormal (Vec3f collision_point) = 0;
+      virtual Vec3f surfaceNormal (const Vec3f& collision_point) = 0;
       /**Check if the a vertex collide w/ the object or not*/
-      virtual bool isHit (Vec3f check_point) = 0;
+      virtual bool isHit (const Vec3f& check_point) = 0;
       /**Return surface normal given collision particle
        * useful when particle is a sphere instead of a point
        * @param p Particle to check against
        * @return Unit vector of the surface normal
       */
-      virtual Vec3f surfaceNormal (Particle p) = 0;
+      virtual Vec3f surfaceNormal (const Particle& p) = 0;
       /**Check if the a Particle collide w/ the object or not
        * useful when particle is a sphere instead of a point
       */
-      virtual bool isHit (Particle p) = 0;
+      virtual bool isHit (const Particle& p) = 0;
   };
 
-  //TODO: TO BE FINISHED
   class SolidBall:SolidObject {
     public:
       float r;
       Vec3f c;
     public:
       /**Constructor*/
-      SolidBall(Vec3f _center, float _radius):c(_center), r(_radius){}
+      SolidBall(const Vec3f& _center, float _radius):c(_center), r(_radius){}
+      /**Defaul Constructor, set everything to 0*/
+      SolidBall():r(0.0f), c(Vec3f()){}
       
-      Vec3f surfaceNormal (Vec3f collision_point) override {
+      Vec3f surfaceNormal (const Vec3f& collision_point) {
         return (collision_point - c).getUnit();
       }
       
-      bool isHit (Vec3f check_point) override {
-        if ((check_point - c).getL() < r)
+      bool isHit (const Vec3f& check_point) {
+        if ((check_point - c).getL() <= r){
           return TRUE;
+        }
         return FALSE;
       }
       
-      Vec3f surfaceNormal (Particle p) override {
-
+      Vec3f surfaceNormal (const Particle& p) {
+        return (p.s - c).getUnit();
       }
 
-
-
+      bool isHit (const Particle& p) {
+        if ((p.s-c).getL() <= r + p.r){
+          return TRUE;
+        }
+        return FALSE;
+      }
   };
 
-  /**Spring class descript spring between 2 Particle*/
+  /**Spring class descript spring between 2 Particle
+   * Hooke's Law is expressed as follow: F=Kx -> ma=Kx
+   * Since we only care about acceleration in this project:
+   * a = (K/m)x
+   * and let another constant k = (K/m)
+   * 
+   * member var:
+   *  head ptr: pointer to one end of the spring
+   *  end ptr: pointer to another end of the spring
+   *  k: constant (K/m)
+   *  l: rest length of the spring
+   * member func:
+   *  
+  */
   class Spring {
     private:
       Particle* head;
       Particle* end;
-      float k;
+      float k; //Hooke's Law
       float l;
     public:
-      Spring(Particle* _head, Particle* _end):head(_head), end(_end), k(1), l(15){}
-
+      /**Constructor*/
+      Spring(Particle* _head, Particle* _end):head(_head), end(_end), k(SPRING_K), l(SPRING_L){}
+      /**Default Constructor, set everything to 0 or NULL*/
+      Spring():head(NULL),end(NULL),k(0.0f),l(0.0f){}
       /**Hooke's Law, F=kx; a=(k/m)x.
        * Since we only care about acceleration here,
        * let (k/m) be another constant.
@@ -177,17 +191,65 @@
        * invoke accumilateA on both head and end
       */
       void springAct(){
-        Vec3f direction = end->getS() - head->getS();
-        float currL = direction.getL;
-        Vec3f x = (currL - l) * direction;
-        head->accumilateA(k*x);
-        end->accumilateA(-k*x);
+        if (head!=NULL && end!=NULL){
+          Vec3f direction = end->s - head->s;
+          float currL = direction.getL();
+          Vec3f x = (currL - l) * direction;
+          head->accumA(k*x);
+          end->accumA(-k*x);
+        }
       }
   };
 
+  /** "Director" of the physical world */
   class PhysSystem {
+    public:
+      Particle* part_list;
+      int part_count;
+      Spring* spring_list;
+      int spring_count; //aka # of segments of rope
+      SolidBall ball;
+    public:
+    /**Constructor. _head and _end is the position of the two ends of the rope*/
+      PhysSystem (const Vec3f& _head, const Vec3f& _end, const SolidBall& _ball, int _part_count = PART_COUNT){
+        part_count = _part_count;
+        spring_count = _part_count - 1;
+        ball = _ball;
 
+        part_list = new Particle[part_count];
+        spring_list = new Spring[spring_count];
+
+        //initializing particles
+        float segment_length = (_end - _head).getL() / spring_count;
+        Vec3f head_end_direction = (_end - _head).getUnit();
+        Vec3f part_position = _head;
+        int fixed = FALSE;
+        for (int i=0; i<part_count; i++) {
+          fixed = TRUE ? FALSE : (i==0 || i==part_count); //fix first and last particles
+          part_list[i] = Particle(part_position, PART_RADIUS, fixed);
+
+          part_position = part_position + head_end_direction * segment_length;
+        }
+        
+
+
+
+      }
+      /**Default Constructor, set all to 0 or NULL*/
+      PhysSystem (): part_list(NULL), part_count(0), spring_list(NULL), spring_count(0), ball(SolidBall()){}
+      /**Destructor*/
+      ~PhysSystem(){
+        if (part_list!=NULL){
+          delete [] part_list;
+          part_list = NULL;
+        }
+        if (spring_list!=NULL){
+          delete [] spring_list;
+          spring_list = NULL;
+        }
+      }
   };
+
 // **********************
 
 // * GLOBAL variables and Objects.
@@ -265,12 +327,10 @@ void init (void)
 
 void display (void)
 {
-  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glLoadIdentity ();
-  glDisable (GL_LIGHTING);
+  drawBackground();
   
   glEnable (GL_LIGHTING);
-  glTranslatef (-6.5, 6, -9.0f); // move camera out and center on the rope
+  // glTranslatef (-6.5, 6, -9.0f); // move camera out and center on the rope
   // glTranslatef (6.5, 6, -9.0f);
   glPushMatrix ();
   glTranslatef (BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z);
@@ -335,6 +395,9 @@ void arrow_keys (int a_keys, int x, int y)
 }
 
 void drawBackground(){
+  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glLoadIdentity ();
+  glDisable (GL_LIGHTING);
   glBegin (GL_POLYGON); //Skyblue Background 
     glColor3f (0.8f, 0.8f, 1.0f);
     glVertex3f (-200.0f, -100.0f, -100.0f);
