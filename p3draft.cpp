@@ -1,8 +1,23 @@
 /**Author: Un Hou Chan
+ * 
+ * README:
+ * !! g++ compiler is needed for compiling "new" and "delete" operator !!
+ * Keyboard control:
+ * Esc: quit program
+ * 'w': move ball forward
+ * 's': move ball backward
+ * arrow_up: move ball upward
+ * arrow_down: move ball downward
+ * arrow_left: move ball left
+ * arrow_right: move ball right
+ * 
+ * 
+ * 
+ * 
  * Framerate independant animation reference:
  * http://hdrlab.org.nz/articles/amiga-os-articles/minigl-templates/frame-rate-independent-animation-using-glut/
  * 
- * NOTE: g++ compiler is needed for "new" and "delete" operator to function
+ * 
 */
 
 //standard lib
@@ -32,6 +47,8 @@
   #define TRUE 1
   #define FALSE 0
 
+  #define BALL_TRANSLATION 0.5f
+
   #define GRAVITY 10.0f
   #define TIMERMSECS 5 // 33 ms per timer step
   #define TIMESTEP 0.05f  // 0.05 s per time step
@@ -42,7 +59,7 @@
   #define PART_POSITION_X_1 -30.0f
   #define PART_POSITION_X_2 30.0f
   #define PART_POSITION_Y 8.0f
-  #define PART_POSITION_Z -38.0f
+  #define PART_POSITION_Z -39.0f
   #define PART_COUNT 20
   #define PART_RADIUS 0.5f
 // *************
@@ -475,7 +492,7 @@ void display (void)
   // glTranslatef (-6.5, 0, -4.0f); // move camera out and center on the rope
   // global_sys.timestep(1.1f);
   global_sys.drawAll(0.0f, 0.5f, 0.0f);
-  testDraw();
+  // testDraw();
 
   glutSwapBuffers();
   glutPostRedisplay();
@@ -508,6 +525,12 @@ void keyboard (unsigned char key, int x, int y)
     case 32:
       pause = 1 - pause;
       break;
+    case 'w':
+      global_sys.ball.c = global_sys.ball.c - Vec3f(0, 0, BALL_TRANSLATION);
+    break;
+    case 's':
+      global_sys.ball.c = global_sys.ball.c + Vec3f(0, 0, BALL_TRANSLATION);
+    break;
     default: 
     break;
   }
@@ -518,10 +541,16 @@ void arrow_keys (int a_keys, int x, int y)
   switch(a_keys) 
   {
     case GLUT_KEY_UP:
-      glutFullScreen();
+      global_sys.ball.c = global_sys.ball.c + Vec3f(0, BALL_TRANSLATION, 0);
     break;
     case GLUT_KEY_DOWN: 
-      glutReshapeWindow (1280, 720 );
+      global_sys.ball.c = global_sys.ball.c - Vec3f(0, BALL_TRANSLATION, 0);
+    break;
+    case GLUT_KEY_LEFT:
+      global_sys.ball.c = global_sys.ball.c - Vec3f(BALL_TRANSLATION, 0, 0);
+    break;
+    case GLUT_KEY_RIGHT:
+      global_sys.ball.c = global_sys.ball.c + Vec3f(BALL_TRANSLATION, 0, 0);
     break;
     default:
     break;
