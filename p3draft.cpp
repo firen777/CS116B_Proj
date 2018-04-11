@@ -25,21 +25,25 @@
 #include "aclib/vec3.h"
 
 // * Constants *
-  #define BALL_POSITION_X 0.0f
-  #define BALL_POSITION_Y 0.0f
+  #define BALL_POSITION_X 7.0f
+  #define BALL_POSITION_Y -2.0f
   #define BALL_POSITION_Z -40.0f
-  #define BALL_RADIUS 5.5f
+  #define BALL_RADIUS 6.5f
   #define TRUE 1
   #define FALSE 0
 
-  #define GRAVITY 20.0f
+  #define GRAVITY 10.0f
   #define TIMERMSECS 5 // 33 ms per timer step
-  #define TIMESTEP 0.005f  // 0.033 s per time step, ideally
+  #define TIMESTEP 0.05f  // 0.05 s per time step
 
   #define SPRING_L 8.0f //shouldn't use
-  #define SPRING_K 20.0f
+  #define SPRING_K 150.0f
 
-  #define PART_COUNT 10
+  #define PART_POSITION_X_1 -30.0f
+  #define PART_POSITION_X_2 30.0f
+  #define PART_POSITION_Y 8.0f
+  #define PART_POSITION_Z -38.0f
+  #define PART_COUNT 20
   #define PART_RADIUS 0.5f
 // *************
 
@@ -88,7 +92,12 @@
         if (fixed != TRUE) {
           Vec3f temp = s;
           //Acceleration Dampening
-          accumA((s_prev - s).getUnit() * 0.1f * a.getL() );
+          accumA((s_prev - s) * 0.2f * a.getL()); //-v dampening
+          // float damp = 0.3f;
+          // if (a.getL()<=damp)
+          //   accumA(-a); //a thershold dampening
+          // else
+          //   accumA(-a.getUnit() * damp);
 
           s = s + (s - s_prev) + a*dT*dT;
           s_prev = temp;
@@ -215,6 +224,10 @@
       int part_count;
       Spring* spring_list;
       int spring_count; //aka # of segments of rope
+
+      Spring* stiff_list;
+      int stiff_count;
+
       SolidBall ball;
     private:
       /**Accumilate gravity on all particles. Delegate function*/
@@ -235,15 +248,33 @@
           part_list[i].verletStep(dT);
         }
       }
+      /**Command all stiff spring to act...*/
+      void stiffAllAct() {
+        for (int i=0; i<stiff_count; i++){
+          stiff_list[i].springAct();
+        }
+      }
+      /**Particle colliding with ball*/
+      void collisionCheckList() {
+        for (int i=0; i<part_count; i++){
+          if (ball.isHit(part_list[i])){
+            Vec3f corrected_position = ball.c + ball.surfaceNormal(part_list[i]) * (ball.r + part_list[i].r);
+            part_list[i].s = corrected_position;
+            part_list[i].s_prev = corrected_position;
+          }
+        }
+      }
     public:
       /**Constructor. _head and _end is the position of the two ends of the rope*/
       PhysSystem (const Vec3f& _head, const Vec3f& _end, const SolidBall& _ball, int _part_count = PART_COUNT){
         part_count = _part_count;
         spring_count = _part_count - 1;
+        stiff_count = _part_count - 2;
         ball = _ball;
 
         part_list = new Particle[part_count];
         spring_list = new Spring[spring_count];
+        stiff_list = new Spring[stiff_count];
 
         //initializing particles
         float segment_length = (_end - _head).getL() / spring_count;
@@ -258,8 +289,13 @@
         }
         //initializing spring
         for (int i=0; i<spring_count; i++){
-          spring_list[i] = Spring(&(part_list[i]), &(part_list[i+1]), SPRING_K, segment_length/2.0f);
+          spring_list[i] = Spring(&(part_list[i]), &(part_list[i+1]), SPRING_K, segment_length/1.0f);
         }
+        //initializing stiff spring
+        for (int i=0; i<stiff_count; i++){
+          stiff_list[i] = Spring(&(part_list[i]), &(part_list[i+2]), SPRING_K, segment_length/0.5f);
+        }
+
       }
       /**Default Constructor, set all to 0 or NULL*/
       PhysSystem (): part_list(NULL), part_count(0), spring_list(NULL), spring_count(0), ball(SolidBall()){}
@@ -274,14 +310,13 @@
           spring_list = NULL;
         }
       }
-
-      
-
       //TODO: collision
       void timestep(float dT){
         accumGrav();
         springAllAct();
+        stiffAllAct();
         partIntegrate(dT);
+        collisionCheckList();
       }
 
       void drawAll(float r=0.0f, float g=0.0f, float b=0.0f){
@@ -330,8 +365,8 @@
   int prevTime = 0;
 
   SolidBall global_ball = SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
-  PhysSystem global_sys = PhysSystem(Vec3f(BALL_POSITION_X-30, BALL_POSITION_Y +30, BALL_POSITION_Z),
-                                     Vec3f(BALL_POSITION_X+30, BALL_POSITION_Y +30, BALL_POSITION_Z),
+  PhysSystem global_sys = PhysSystem(Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
+                                     Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z),
                                      global_ball);
 
   //tester
@@ -516,8 +551,11 @@ void animate(int value){
 	// int elapsedTime = currTime - startTime;
 
 	// ##### REPLACE WITH YOUR OWN GAME/APP MAIN CODE HERE #####
-  // printf("%f s\n", timeSincePrevFrame/1000.0f);
-  global_sys.timestep(timeSincePrevFrame/1000.0f);
+  
+  // global_sys.timestep(timeSincePrevFrame/1000.0f);
+  // printf("%f\n", timeSincePrevFrame/1000.0f);
+  global_sys.timestep(TIMESTEP);
+
 	// ##### END OF GAME/APP MAIN CODE #####
 
 	
