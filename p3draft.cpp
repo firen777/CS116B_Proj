@@ -32,12 +32,12 @@
   #define TRUE 1
   #define FALSE 0
 
-  #define GRAVITY 0.1f
+  #define GRAVITY 9.8f
   #define TIMERMSECS 11 // 33 ms per timer step
   #define TIMESTEP 0.011f  // 0.033 s per time step, ideally
 
-  #define SPRING_L 8.0f
-  #define SPRING_K 0.1f
+  #define SPRING_L 8.0f //shouldn't use
+  #define SPRING_K 10.0f
 
   #define PART_COUNT 10
   #define PART_RADIUS 0.5f
@@ -87,7 +87,7 @@
       void verletStep(float dT) {
         if (fixed != TRUE) {
           Vec3f temp = s;
-          s = 2*s - s_prev + a*dT*dT;
+          s = s + 0.99f*(s - s_prev) + a*dT*dT;
           s_prev = temp;
         }
         a = Vec3f();
@@ -216,22 +216,20 @@
     private:
       /**Accumilate gravity on all particles. Delegate function*/
       void accumGrav() {
-        // printf("accumGrav\n");
         for (int i=0; i<part_count; i++) {
           part_list[i].accumA(Vec3f(0,-GRAVITY,0));
         }
       }
       /**Command All spring to act. Delegate function*/
       void springAllAct() {
-        // printf("springAllAct\n");
         for (int i=0; i<spring_count; i++){
           spring_list[i].springAct();
         }
       }
       /**Command all particle to integrate. Delegate function*/
       void partIntegrate(float dT) {
-        // printf("PartIntegrate\n");
         for (int i=0; i<part_count; i++) {
+          printf("part%d a:(%f, %f, %f)\n", i,part_list[i].a.x,part_list[i].a.y,part_list[i].a.z);
           part_list[i].verletStep(dT);
         }
       }
@@ -258,7 +256,7 @@
         }
         //initializing spring
         for (int i=0; i<spring_count; i++){
-          spring_list[i] = Spring(&(part_list[i]), &(part_list[i+1]));
+          spring_list[i] = Spring(&(part_list[i]), &(part_list[i+1]), SPRING_K, segment_length-2.0f);
         }
       }
       /**Default Constructor, set all to 0 or NULL*/
@@ -293,7 +291,8 @@
           p = part_list[i].s;
           p_r = part_list[i].r;
 
-          printf("part%d: (%f,%f,%f),%f, %d \n", i, p.x, p.y, p.z, p_r, part_list[i].fixed);
+          printf("part%d: (%f,%f,%f)\n", i, p.x, p.y, p.z);
+          
 
           glPushMatrix();
             glTranslatef(p.x, p.y, p.z);
@@ -337,9 +336,9 @@
                                      global_ball);
 
   //tester
-  Particle p1(Vec3f(BALL_POSITION_X-30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
-  Particle p2(Vec3f(BALL_POSITION_X+30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
-  Spring s12(&p1, &p2);
+  // Particle p1(Vec3f(BALL_POSITION_X-30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
+  // Particle p2(Vec3f(BALL_POSITION_X+30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
+  // Spring s12(&p1, &p2);
 
   
 // ****************
@@ -372,16 +371,16 @@
 // ***********************
 
 void testDraw(){
-  glColor3f(1.0f,0,0);
-  glPushMatrix();
-    glTranslatef(p1.s.x, p1.s.y, p1.s.z);
-    glutSolidSphere(p1.r, 10, 10);
-  glPopMatrix();
+  // glColor3f(1.0f,0,0);
+  // glPushMatrix();
+  //   glTranslatef(p1.s.x, p1.s.y, p1.s.z);
+  //   glutSolidSphere(p1.r, 10, 10);
+  // glPopMatrix();
 
-  glPushMatrix();
-    glTranslatef(p2.s.x, p2.s.y, p2.s.z);
-    glutSolidSphere(p2.r, 10, 10);
-  glPopMatrix();
+  // glPushMatrix();
+  //   glTranslatef(p2.s.x, p2.s.y, p2.s.z);
+  //   glutSolidSphere(p2.r, 10, 10);
+  // glPopMatrix();
   
 
 }
@@ -398,7 +397,8 @@ int main (int argc, char *argv[])
   glutKeyboardFunc (keyboard);
   glutSpecialFunc (arrow_keys);
   // Start the timer
-    glutTimerFunc(TIMERMSECS, animate, 0);
+
+  glutTimerFunc(TIMERMSECS, animate, 0);
 
 	// Initialize the time variables
 	startTime = glutGet(GLUT_ELAPSED_TIME);
@@ -439,7 +439,7 @@ void display (void)
   
   glEnable (GL_LIGHTING);
   // glTranslatef (-6.5, 0, -4.0f); // move camera out and center on the rope
-
+  // global_sys.timestep(1.1f);
   global_sys.drawAll(0.0f, 0.5f, 0.0f);
   testDraw();
 
@@ -514,10 +514,11 @@ void animate(int value){
 	// Measure the elapsed time
 	int currTime = glutGet(GLUT_ELAPSED_TIME);
 	int timeSincePrevFrame = currTime - prevTime;
-	int elapsedTime = currTime - startTime;
+	// int elapsedTime = currTime - startTime;
 
 	// ##### REPLACE WITH YOUR OWN GAME/APP MAIN CODE HERE #####
-  global_sys.timestep(elapsedTime/1000.0);
+  printf("%f s\n", timeSincePrevFrame/1000.0f);
+  global_sys.timestep(timeSincePrevFrame/1000.0f);
 	// ##### END OF GAME/APP MAIN CODE #####
 
 	
