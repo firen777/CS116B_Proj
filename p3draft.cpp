@@ -32,12 +32,12 @@
   #define TRUE 1
   #define FALSE 0
 
-  #define GRAVITY 9.8f
-  #define TIMERMSECS 11 // 33 ms per timer step
-  #define TIMESTEP 0.011f  // 0.033 s per time step, ideally
+  #define GRAVITY 20.0f
+  #define TIMERMSECS 5 // 33 ms per timer step
+  #define TIMESTEP 0.005f  // 0.033 s per time step, ideally
 
   #define SPRING_L 8.0f //shouldn't use
-  #define SPRING_K 10.0f
+  #define SPRING_K 20.0f
 
   #define PART_COUNT 10
   #define PART_RADIUS 0.5f
@@ -87,7 +87,10 @@
       void verletStep(float dT) {
         if (fixed != TRUE) {
           Vec3f temp = s;
-          s = s + 0.99f*(s - s_prev) + a*dT*dT;
+          //Acceleration Dampening
+          accumA((s_prev - s).getUnit() * 0.1f * a.getL() );
+
+          s = s + (s - s_prev) + a*dT*dT;
           s_prev = temp;
         }
         a = Vec3f();
@@ -229,7 +232,6 @@
       /**Command all particle to integrate. Delegate function*/
       void partIntegrate(float dT) {
         for (int i=0; i<part_count; i++) {
-          printf("part%d a:(%f, %f, %f)\n", i,part_list[i].a.x,part_list[i].a.y,part_list[i].a.z);
           part_list[i].verletStep(dT);
         }
       }
@@ -256,7 +258,7 @@
         }
         //initializing spring
         for (int i=0; i<spring_count; i++){
-          spring_list[i] = Spring(&(part_list[i]), &(part_list[i+1]), SPRING_K, segment_length-2.0f);
+          spring_list[i] = Spring(&(part_list[i]), &(part_list[i+1]), SPRING_K, segment_length/2.0f);
         }
       }
       /**Default Constructor, set all to 0 or NULL*/
@@ -290,9 +292,6 @@
         for (int i=0; i<part_count; i++){
           p = part_list[i].s;
           p_r = part_list[i].r;
-
-          printf("part%d: (%f,%f,%f)\n", i, p.x, p.y, p.z);
-          
 
           glPushMatrix();
             glTranslatef(p.x, p.y, p.z);
@@ -517,7 +516,7 @@ void animate(int value){
 	// int elapsedTime = currTime - startTime;
 
 	// ##### REPLACE WITH YOUR OWN GAME/APP MAIN CODE HERE #####
-  printf("%f s\n", timeSincePrevFrame/1000.0f);
+  // printf("%f s\n", timeSincePrevFrame/1000.0f);
   global_sys.timestep(timeSincePrevFrame/1000.0f);
 	// ##### END OF GAME/APP MAIN CODE #####
 
