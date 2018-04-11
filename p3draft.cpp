@@ -1,6 +1,8 @@
 /**Author: Un Hou Chan
  * Framerate independant animation reference:
  * http://hdrlab.org.nz/articles/amiga-os-articles/minigl-templates/frame-rate-independent-animation-using-glut/
+ * 
+ * NOTE: g++ compiler is needed for "new" and "delete" operator to function
 */
 
 //standard lib
@@ -23,10 +25,10 @@
 #include "aclib/vec3.h"
 
 // * Constants *
-  #define BALL_POSITION_X 6
-  #define BALL_POSITION_Y -2
-  #define BALL_POSITION_Z 0
-  #define BALL_RADIUS 0.75
+  #define BALL_POSITION_X 0.0f
+  #define BALL_POSITION_Y 0.0f
+  #define BALL_POSITION_Z -40.0f
+  #define BALL_RADIUS 5.5f
   #define TRUE 1
   #define FALSE 0
 
@@ -38,7 +40,7 @@
   #define SPRING_K 1
 
   #define PART_COUNT 10
-  #define PART_RADIUS 0.01f
+  #define PART_RADIUS 0.5f
 // *************
 
 // * Class Declarations *
@@ -175,13 +177,15 @@
   */
   class Spring {
     private:
-      Particle* head;
-      Particle* end;
-      float k; //Hooke's Law
+      float k; 
       float l;
     public:
+      Particle* head;
+      Particle* end;
+    public:
       /**Constructor*/
-      Spring(Particle* _head, Particle* _end):head(_head), end(_end), k(SPRING_K), l(SPRING_L){}
+      Spring(Particle* _head, Particle* _end, float _k=SPRING_K, float _l=SPRING_L)
+        :head(_head), end(_end), k(_k), l(_l){}
       /**Default Constructor, set everything to 0 or NULL*/
       Spring():head(NULL),end(NULL),k(0.0f),l(0.0f){}
       /**Hooke's Law, F=kx; a=(k/m)x.
@@ -209,8 +213,30 @@
       Spring* spring_list;
       int spring_count; //aka # of segments of rope
       SolidBall ball;
+    private:
+      /**Accumilate gravity on all particles. Delegate function*/
+      void accumGrav() {
+        // printf("accumGrav\n");
+        for (int i=0; i<part_count; i++) {
+          part_list[i].accumA(Vec3f(0,-GRAVITY,0));
+        }
+      }
+      /**Command All spring to act. Delegate function*/
+      void springAllAct() {
+        // printf("springAllAct\n");
+        for (int i=0; i<spring_count; i++){
+          spring_list[i].springAct();
+        }
+      }
+      /**Command all particle to integrate. Delegate function*/
+      void partIntegrate(float dT) {
+        // printf("PartIntegrate\n");
+        for (int i=0; i<part_count; i++) {
+          part_list[i].verletStep(dT);
+        }
+      }
     public:
-    /**Constructor. _head and _end is the position of the two ends of the rope*/
+      /**Constructor. _head and _end is the position of the two ends of the rope*/
       PhysSystem (const Vec3f& _head, const Vec3f& _end, const SolidBall& _ball, int _part_count = PART_COUNT){
         part_count = _part_count;
         spring_count = _part_count - 1;
@@ -230,10 +256,10 @@
 
           part_position = part_position + head_end_direction * segment_length;
         }
-        
-
-
-
+        //initializing spring
+        for (int i=0; i<spring_count; i++){
+          spring_list[i] = Spring(&(part_list[i]), &(part_list[i+1]));
+        }
       }
       /**Default Constructor, set all to 0 or NULL*/
       PhysSystem (): part_list(NULL), part_count(0), spring_list(NULL), spring_count(0), ball(SolidBall()){}
@@ -248,18 +274,70 @@
           spring_list = NULL;
         }
       }
+
+      
+
+      //TODO: collision
+      void timestep(float dT){
+        accumGrav();
+        springAllAct();
+        partIntegrate(dT);
+      }
+
+      void drawAll(float r=0.0f, float g=0.0f, float b=0.0f){
+        glColor3f(r,g,b);
+        //draw particles
+        Vec3f p; //temp position of particle
+        float p_r; //temp radius of particle
+        for (int i=0; i<part_count; i++){
+          p = part_list[i].s;
+          p_r = part_list[i].r;
+          glPushMatrix();
+            glTranslatef(p.x, p.y, p.z);
+            glutSolidSphere(p_r, 10, 10);
+          glPopMatrix();
+        }
+
+        //draw rope segment
+        Vec3f p1;
+        Vec3f p2;
+        glLineWidth(7.0f);
+        for (int i=0; i<spring_count; i++){
+          p1 = spring_list[i].head->s;
+          p2 = spring_list[i].end ->s;
+          glBegin(GL_LINE);
+            glVertex3f(p1.x, p1.y, p1.z);
+            glVertex3f(p2.x, p2.y, p2.z);
+          glEnd();
+        }
+
+        //draw ball
+        glColor3f(r+0.3f, g+0.3f, b+0.3f);
+        glPushMatrix();
+            glTranslatef(ball.c.x, ball.c.y, ball.c.z);
+            glutSolidSphere(ball.r, 50, 50);
+        glPopMatrix();
+
+      }
   };
 
 // **********************
 
 // * GLOBAL variables and Objects.
   int pause = TRUE;
-  //timer
-  int startTime; 
-  int prevTime;
+  //timer start and prev time, in ms
+  int startTime = 0; 
+  int prevTime = 0;
 
+  SolidBall global_ball = SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
+  PhysSystem global_sys = PhysSystem(Vec3f(BALL_POSITION_X-30, BALL_POSITION_Y +30, BALL_POSITION_Z),
+                                     Vec3f(BALL_POSITION_X+30, BALL_POSITION_Y +30, BALL_POSITION_Z),
+                                     global_ball);
 
+  //tester
+  Particle p1(Vec3f(BALL_POSITION_X-30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
 
+  
 // ****************
 
 
@@ -280,13 +358,18 @@
 
   //Drawing function
   void drawBackground();
-  void drawBall();
-  void drawRope();
+  // void drawBall();
+  // void drawRope(); //packaged inside physsystem...
+  void testDraw(); //testing function; render individual components for testing
 
   /** animate function for time based animation */
   void animate(int value);
 
 // ***********************
+
+void testDraw(){
+  
+}
 
 int main (int argc, char *argv[]) 
 {
@@ -299,6 +382,13 @@ int main (int argc, char *argv[])
   glutReshapeFunc (reshape);
   glutKeyboardFunc (keyboard);
   glutSpecialFunc (arrow_keys);
+  // Start the timer
+    glutTimerFunc(TIMERMSECS, animate, 0);
+
+	// Initialize the time variables
+	startTime = glutGet(GLUT_ELAPSED_TIME);
+	prevTime = startTime;
+
   glutMainLoop ();
 }
 
@@ -327,22 +417,16 @@ void init (void)
 
 void display (void)
 {
+  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glLoadIdentity ();
+
   drawBackground();
   
   glEnable (GL_LIGHTING);
-  // glTranslatef (-6.5, 6, -9.0f); // move camera out and center on the rope
-  // glTranslatef (6.5, 6, -9.0f);
-  glPushMatrix ();
-  glTranslatef (BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z);
-  glColor3f (1.0f, 1.0f, 0.0f);
-  glutSolidSphere (BALL_RADIUS - 0.1, 50, 50); // draw the ball, but with a slightly lower radius, otherwise we could get ugly visual artifacts of rope penetrating the ball slightly
-  glLineWidth(10);
-  glNormal3f(0.0f, 0.0f, 1.0f);
-  glBegin(GL_LINES);
-    glVertex3f(0, 0, 0);
-    glVertex3f(10, 0, 0);
-  glEnd();
-  glPopMatrix ();
+  // glTranslatef (-6.5, 0, -4.0f); // move camera out and center on the rope
+
+  global_sys.drawAll(0.0f, 0.5f, 0.0f);
+
   glutSwapBuffers();
   glutPostRedisplay();
 }
@@ -395,8 +479,6 @@ void arrow_keys (int a_keys, int x, int y)
 }
 
 void drawBackground(){
-  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glLoadIdentity ();
   glDisable (GL_LIGHTING);
   glBegin (GL_POLYGON); //Skyblue Background 
     glColor3f (0.8f, 0.8f, 1.0f);
@@ -408,13 +490,6 @@ void drawBackground(){
   glEnd ();
 }
 
-void drawBall(){
-
-}
-
-void drawRope(){
-
-}
 
 void animate(int value){
   // Set up the next timer tick (do this first)
@@ -426,7 +501,7 @@ void animate(int value){
 	int elapsedTime = currTime - startTime;
 
 	// ##### REPLACE WITH YOUR OWN GAME/APP MAIN CODE HERE #####
-
+  global_sys.timestep(elapsedTime);
 	// ##### END OF GAME/APP MAIN CODE #####
 
 	
@@ -436,3 +511,4 @@ void animate(int value){
 
 	prevTime = currTime;
 }
+
