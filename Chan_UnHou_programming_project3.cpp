@@ -50,7 +50,8 @@
   #define BALL_TRANSLATION 0.5f
 
   #define GRAVITY 20.0f
-  #define AIR_DRAG_K 1.0f
+  #define AIR_DRAG_K 0.1f
+  #define DAMPEN_K 0.97f
   #define TIMERMSECS 5 // 33 ms per timer step
   #define TIMESTEP 0.05f  // 0.05 s per time step
 
@@ -60,8 +61,8 @@
   #define PART_POSITION_X_1 -30.0f
   #define PART_POSITION_X_2 30.0f
   #define PART_POSITION_Y 8.0f
-  #define PART_POSITION_Z -39.0f
-  #define PART_COUNT 20
+  #define PART_POSITION_Z -40.0f
+  #define PART_COUNT 30
   #define PART_RADIUS 0.5f
 // *************
 
@@ -98,7 +99,12 @@
         Vec3f v = s-s_prev;
         // Vec3f drag_force = -(v).getUnit() * v.getL() * v.getL() * AIR_DRAG_K ;
 
-        Vec3f drag_force = -(v).getUnit() * AIR_DRAG_K ;
+        // Vec3f drag_force = -(v).getUnit() * AIR_DRAG_K ;
+
+        float v_scale = v.getL() / TIMESTEP;
+
+        Vec3f drag_force = -(v).getUnit() * v_scale * AIR_DRAG_K ;
+        
         accumA(drag_force);
       }
     public:
@@ -124,14 +130,15 @@
           Vec3f temp = s;
           //Acceleration Dampening
           // accumA((s_prev - s) * 0.2f * a.getL()); //-v dampening
-          air_drag();
+          
           // float damp = 0.3f;
           // if (a.getL()<=damp)
           //   accumA(-a); //a thershold dampening
           // else
           //   accumA(-a.getUnit() * damp);
 
-          s = s + (s - s_prev) + a*dT*dT;
+          air_drag();
+          s = s + (s - s_prev)*DAMPEN_K + a*dT*dT;
           s_prev = temp;
         }
         a = Vec3f();
@@ -590,23 +597,29 @@ void animate(int value){
     glutTimerFunc(TIMERMSECS, animate, 0);
 
 	// Measure the elapsed time
-	int currTime = glutGet(GLUT_ELAPSED_TIME);
-	int timeSincePrevFrame = currTime - prevTime;
+	// int currTime = glutGet(GLUT_ELAPSED_TIME);
+	// int timeSincePrevFrame = currTime - prevTime;
+  // float timeSincePrev_ms = timeSincePrevFrame/2000.0f;
 	// int elapsedTime = currTime - startTime;
 
 	// ##### REPLACE WITH YOUR OWN GAME/APP MAIN CODE HERE #####
-  
-  // global_sys.timestep(timeSincePrevFrame/1000.0f);
+  // if (timeSincePrev_ms < 0.07f) {
+  //   global_sys.timestep(timeSincePrev_ms);
+  // }
+
+
+  // 
   // printf("%f\n", timeSincePrevFrame/1000.0f);
+  // printf("%f\n", TIMESTEP);
   global_sys.timestep(TIMESTEP);
 
 	// ##### END OF GAME/APP MAIN CODE #####
 
-	
+	//!! Non-constant dT sucks lol
 
 	// Force a redisplay to render the new image
 	glutPostRedisplay();
 
-	prevTime = currTime;
+	// prevTime = currTime;
 }
 
