@@ -49,7 +49,8 @@
 
   #define BALL_TRANSLATION 0.5f
 
-  #define GRAVITY 10.0f
+  #define GRAVITY 20.0f
+  #define AIR_DRAG_K 1.0f
   #define TIMERMSECS 5 // 33 ms per timer step
   #define TIMESTEP 0.05f  // 0.05 s per time step
 
@@ -86,7 +87,20 @@
       float r;
       Vec3f a;
       int fixed; //to indicate whether the point is fixed or not
-      
+    private:
+      /**air drag
+       * Force = 1/2 * (rho) * v^2 * K * Area
+       * a = k * v^2
+       * 
+       * ...ANNNNNDDD it didn't work
+      */
+      void air_drag(){
+        Vec3f v = s-s_prev;
+        // Vec3f drag_force = -(v).getUnit() * v.getL() * v.getL() * AIR_DRAG_K ;
+
+        Vec3f drag_force = -(v).getUnit() * AIR_DRAG_K ;
+        accumA(drag_force);
+      }
     public:
       /**Constructor
        * @param const Vec3f& _s, initial position of particle
@@ -109,7 +123,8 @@
         if (fixed != TRUE) {
           Vec3f temp = s;
           //Acceleration Dampening
-          accumA((s_prev - s) * 0.2f * a.getL()); //-v dampening
+          // accumA((s_prev - s) * 0.2f * a.getL()); //-v dampening
+          air_drag();
           // float damp = 0.3f;
           // if (a.getL()<=damp)
           //   accumA(-a); //a thershold dampening
