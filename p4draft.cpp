@@ -29,19 +29,20 @@
 #include "aclib/vec3.h"
 
 // * Constants *
+  #define TRUE 1
+  #define FALSE 0
+
   #define BALL_POSITION_X 7.0f
   #define BALL_POSITION_Y -2.0f
   #define BALL_POSITION_Z -40.0f
   #define BALL_RADIUS 6.5f
-  #define TRUE 1
-  #define FALSE 0
 
   #define BALL_TRANSLATION 0.5f
 
   #define GRAVITY 20.0f
   #define AIR_DRAG_K 0.1f
   #define DAMPEN_K 0.97f
-  #define TIMERMSECS 5 // 33 ms per timer step
+  #define TIMERMSECS 5 // 5 ms per timer step
   #define TIMESTEP 0.05f  // 0.05 s per time step
 
   #define SPRING_L 8.0f //shouldn't use
@@ -51,8 +52,8 @@
   #define PART_POSITION_X_2 30.0f
   #define PART_POSITION_Y 8.0f
   #define PART_POSITION_Z -40.0f
-  #define PART_COUNT_ROW 20
-  #define PART_COUNT_COL 20
+  #define PART_ROW_COUNT 20
+  #define PART_COL_COUNT 20
   #define PART_RADIUS 0.5f
 // *************
 
@@ -324,27 +325,45 @@
         }
       }
       
-      /**Particle colliding with ball*/
-      void collisionCheckList() {
-        for (int i=0; i<part_count; i++){
-          if (ball.isHit(part_list[i])){
-            Vec3f corrected_position = ball.c + ball.surfaceNormal(part_list[i]) * (ball.r + part_list[i].r);
-            part_list[i].s = corrected_position;
-            part_list[i].s_prev = corrected_position;
-          }
-        }
-      }
+      // /**Particle colliding with ball*/ //not needed in Project 4
+      // void collisionCheckList() {
+      //   for (int i=0; i<part_count; i++){
+      //     if (ball.isHit(part_list[i])){
+      //       Vec3f corrected_position = ball.c + ball.surfaceNormal(part_list[i]) * (ball.r + part_list[i].r);
+      //       part_list[i].s = corrected_position;
+      //       part_list[i].s_prev = corrected_position;
+      //     }
+      //   }
+      // }
+      
     public:
-      /**Constructor. _head and _end is the position of the two ends of the rope*/
-      PhysSystem (const Vec3f& _head, const Vec3f& _end, const SolidBall& _ball, int _part_count = PART_COUNT){
-        part_count = _part_count;
-        spring_count = _part_count - 1;
-        stiff_count = _part_count - 2;
-        ball = _ball;
+      /**Constructor. */
+      PhysSystem (const Vec3f& topleft, const Vec3f& topright, 
+                  int _part_row_count = PART_ROW_COUNT, int _part_col_count = PART_COL_COUNT){
+        part_row_count = _part_row_count;
+        part_col_count = _part_col_count;
+        
+        spring_hori_count = (_part_row_count - 1)*_part_col_count;
+        spring_vert_count = (_part_col_count - 1)*_part_row_count;
+        
+        shear_tlbr_count = (_part_row_count - 1) * (_part_col_count - 1);
+        shear_trbl_count = (_part_row_count - 1) * (_part_col_count - 1);
 
-        part_list = new Particle[part_count];
-        spring_list = new Spring[spring_count];
+        stiff_hori_count = (_part_row_count - 2)*_part_col_count;
+        stiff_vert_count = (_part_col_count - 2)*_part_row_count;
+
+        part_list = new Particle*[part_row_count];
+        for (int i=0; i<part_row_count; i++){
+          part_list[i] = new Particle[part_col_count];
+        }
+        
+        spring_hori = new Spring[spring_hori_count];
+        spring_vert = new Spring[spring_vert_count];
+
+        stiff_vert = new Spring[stiff_vert_count];
+        stiff_hori = new Spring[stiff_hori_count];
         stiff_list = new Spring[stiff_count];
+
 
         //initializing particles
         float segment_length = (_end - _head).getL() / spring_count;
