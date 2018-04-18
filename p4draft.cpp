@@ -2,17 +2,6 @@
  * 
  * README:
  * !! g++ compiler is needed for compiling "new" and "delete" operator !!
- * Keyboard control:
- * Esc: quit program
- * 'w': move ball forward
- * 's': move ball backward
- * arrow_up: move ball upward
- * arrow_down: move ball downward
- * arrow_left: move ball left
- * arrow_right: move ball right
- * 
- * 
- * 
  * 
  * Framerate independant animation reference:
  * http://hdrlab.org.nz/articles/amiga-os-articles/minigl-templates/frame-rate-independent-animation-using-glut/
@@ -62,7 +51,8 @@
   #define PART_POSITION_X_2 30.0f
   #define PART_POSITION_Y 8.0f
   #define PART_POSITION_Z -40.0f
-  #define PART_COUNT 30
+  #define PART_COUNT_ROW 20
+  #define PART_COUNT_COL 20
   #define PART_RADIUS 0.5f
 // *************
 
@@ -179,6 +169,14 @@
       virtual bool isHit (const Particle& p) = 0;
   };
 
+  /**SolidBall
+   * member var:
+   *  r: radius of the Ball
+   *  c: center point of the sphere
+   * member func:
+   *  isHit(point); return boolean of whether the given point collide with the ball.
+   *  surfaceNormal(collision_point); return Vec3f of the Normal unit vector given a collision point
+  */
   class SolidBall:SolidObject {
     public:
       float r;
@@ -224,7 +222,7 @@
    *  k: constant (K/m)
    *  l: rest length of the spring
    * member func:
-   *  
+   *  springAct(); act on the connected particles and assert the spring force (acceleration) on them
   */
   class Spring {
     private:
@@ -259,40 +257,73 @@
   /** "Director" of the physical world */
   class PhysSystem {
     public:
-      Particle* part_list;
-      int part_count;
-      Spring* spring_list;
-      int spring_count; //aka # of segments of rope
+      Particle** part_list;
+      int part_row_count; //how many rows
+      int part_col_count; //each rows how many particles
+      
+      Spring* spring_hori;
+      int spring_hori_count;
+      Spring* spring_vert;
+      int spring_vert_count;
 
-      Spring* stiff_list;
-      int stiff_count;
+      Spring* shear_tlbr; //top left -- bottom right
+      int shear_tlbr_count;
+      Spring* shear_trbl; //top right -- bottom left
+      int shear_trbl_count;
 
-      SolidBall ball;
+      Spring* stiff_hori;
+      int stiff_hori_count;
+      Spring* stiff_vert;
+      int stiff_vert_count;
+
+      // SolidBall ball; //not in project 4
     private:
       /**Accumilate gravity on all particles. Delegate function*/
       void accumGrav() {
-        for (int i=0; i<part_count; i++) {
-          part_list[i].accumA(Vec3f(0,-GRAVITY,0));
+        for (int i=0; i<part_row_count; i++){
+          for (int j=0; j<part_col_count; j++){
+            part_list[i][j].accumA(Vec3f(0,-GRAVITY,0));
+          }
         }
       }
+
       /**Command All spring to act. Delegate function*/
       void springAllAct() {
-        for (int i=0; i<spring_count; i++){
-          spring_list[i].springAct();
+        for (int i=0; i<spring_hori_count; i++){
+          spring_hori[i].springAct();
+        }
+        for (int i=0; i<spring_vert_count; i++){
+          spring_vert[i].springAct();
         }
       }
-      /**Command all particle to integrate. Delegate function*/
-      void partIntegrate(float dT) {
-        for (int i=0; i<part_count; i++) {
-          part_list[i].verletStep(dT);
+      /**Command All shear spring to act. Delegate function*/
+      void shearAllAct() {
+        for (int i=0; i<shear_tlbr_count; i++){
+          shear_tlbr[i].springAct();
+        }
+        for (int i=0; i<shear_trbl_count; i++){
+          shear_trbl[i].springAct();
         }
       }
       /**Command all stiff spring to act...*/
       void stiffAllAct() {
-        for (int i=0; i<stiff_count; i++){
-          stiff_list[i].springAct();
+        for (int i=0; i<stiff_hori_count; i++){
+          stiff_hori[i].springAct();
+        }
+        for (int i=0; i<stiff_vert_count; i++){
+          stiff_vert[i].springAct();
         }
       }
+
+      /**Command all particle to integrate. Delegate function*/
+      void partIntegrate(float dT) {
+        for (int i=0; i<part_row_count; i++){
+          for (int j=0; j<part_col_count; j++){
+            part_list[i][j].verletStep(dT);
+          }
+        }
+      }
+      
       /**Particle colliding with ball*/
       void collisionCheckList() {
         for (int i=0; i<part_count; i++){
