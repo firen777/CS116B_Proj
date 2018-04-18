@@ -362,24 +362,34 @@
 
         stiff_vert = new Spring[stiff_vert_count];
         stiff_hori = new Spring[stiff_hori_count];
-        stiff_list = new Spring[stiff_count];
+
+        shear_tlbr = new Spring[shear_tlbr_count];
+        shear_trbl = new Spring[shear_trbl_count];
 
 
         //initializing particles
-        float segment_length = (_end - _head).getL() / spring_count;
-        Vec3f head_end_direction = (_end - _head).getUnit();
-        Vec3f part_position = _head;
-        int fixed = FALSE;
-        for (int i=0; i<part_count; i++) {
-          fixed = (i==0 || i==part_count-1)? TRUE : FALSE ; //fix first and last particles
-          part_list[i] = Particle(part_position, PART_RADIUS, fixed);
+        float segment_length = (topright - topleft).getL() / spring_hori_count;
+        
+        Vec3f head_end_direction = (topright - topleft).getUnit();
+        Vec3f down_direction = Vec3f(0,-1,0);
+        
+        Vec3f part_position = topleft;
 
-          part_position = part_position + head_end_direction * segment_length;
+        for (int i=0; i<part_row_count; i++){
+          for (int j=0; j<part_col_count; j++){
+            part_list[i][j] = Particle(part_position, PART_RADIUS);
+
+            part_position = part_position + head_end_direction * segment_length;
+          }
+          part_position = part_position - head_end_direction * segment_length * part_col_count;
+
+          part_position = part_position + down_direction * segment_length;
         }
         //initializing spring
-        for (int i=0; i<spring_count; i++){
-          spring_list[i] = Spring(&(part_list[i]), &(part_list[i+1]), SPRING_K, segment_length/1.0f);
+        for (int i=0; i<spring_hori_count; i++){
+          
         }
+
         //initializing stiff spring
         for (int i=0; i<stiff_count; i++){
           stiff_list[i] = Spring(&(part_list[i]), &(part_list[i+2]), SPRING_K, segment_length/0.5f);
