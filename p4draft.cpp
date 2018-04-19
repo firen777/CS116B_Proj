@@ -257,25 +257,34 @@
 
   /** "Director" of the physical world */
   class PhysSystem {
-    public:
+    private:
       Particle** part_list;
       int part_row_count; //how many rows
       int part_col_count; //each rows how many particles
       
-      Spring* spring_hori;
-      int spring_hori_count;
-      Spring* spring_vert;
-      int spring_vert_count;
+      Spring** spring_hori;
+      int spring_hori_row_count;
+      int spring_hori_col_count;
 
-      Spring* shear_tlbr; //top left -- bottom right
-      int shear_tlbr_count;
-      Spring* shear_trbl; //top right -- bottom left
-      int shear_trbl_count;
+      Spring** spring_vert;
+      int spring_vert_row_count;
+      int spring_vert_col_count;
 
-      Spring* stiff_hori;
-      int stiff_hori_count;
-      Spring* stiff_vert;
-      int stiff_vert_count;
+      Spring** shear_tlbr; //top left -- bottom right
+      int shear_tlbr_row_count;
+      int shear_tlbr_col_count;
+
+      Spring** shear_trbl; //top right -- bottom left
+      int shear_trbl_row_count;
+      int shear_trbl_col_count;
+
+      Spring** stiff_hori;
+      int stiff_hori_row_count;
+      int stiff_hori_col_count;
+
+      Spring** stiff_vert;
+      int stiff_vert_row_count;
+      int stiff_vert_col_count;
 
       // SolidBall ball; //not in project 4
     private:
@@ -290,29 +299,41 @@
 
       /**Command All spring to act. Delegate function*/
       void springAllAct() {
-        for (int i=0; i<spring_hori_count; i++){
-          spring_hori[i].springAct();
+        for (int i=0; i<spring_hori_row_count; i++){
+          for (int j=0; i<spring_hori_col_count; j++) {
+            spring_hori[i][j].springAct();
+          }
         }
-        for (int i=0; i<spring_vert_count; i++){
-          spring_vert[i].springAct();
+        for (int i=0; i<spring_vert_row_count; i++){
+          for (int j=0; i<spring_vert_col_count; j++) {
+            spring_vert[i][j].springAct();
+          }
         }
       }
       /**Command All shear spring to act. Delegate function*/
       void shearAllAct() {
-        for (int i=0; i<shear_tlbr_count; i++){
-          shear_tlbr[i].springAct();
+        for (int i=0; i<shear_tlbr_row_count; i++){
+          for (int j=0; i<shear_tlbr_col_count; j++) {
+            shear_tlbr[i][j].springAct();
+          }
         }
-        for (int i=0; i<shear_trbl_count; i++){
-          shear_trbl[i].springAct();
+        for (int i=0; i<shear_trbl_row_count; i++){
+          for (int j=0; i<shear_trbl_col_count; j++) {
+            shear_trbl[i][j].springAct();
+          }
         }
       }
       /**Command all stiff spring to act...*/
       void stiffAllAct() {
-        for (int i=0; i<stiff_hori_count; i++){
-          stiff_hori[i].springAct();
+        for (int i=0; i<stiff_hori_row_count; i++){
+          for (int j=0; i<stiff_hori_col_count; j++) {
+            stiff_hori[i][j].springAct();
+          }
         }
-        for (int i=0; i<stiff_vert_count; i++){
-          stiff_vert[i].springAct();
+        for (int i=0; i<stiff_vert_row_count; i++){
+          for (int j=0; i<stiff_vert_col_count; j++) {
+            stiff_vert[i][j].springAct();
+          }
         }
       }
 
@@ -339,25 +360,42 @@
     public:
       /**Constructor. */
       PhysSystem (const Vec3f& topleft, const Vec3f& topright, 
-                  int _part_row_count = PART_ROW_COUNT, int _part_col_count = PART_COL_COUNT){
+                  int _part_row_count = PART_ROW_COUNT, int _part_col_count = PART_COL_COUNT)
+      {
+        //counting:
+
         part_row_count = _part_row_count;
         part_col_count = _part_col_count;
-        
-        spring_hori_count = (_part_row_count - 1)*_part_col_count;
-        spring_vert_count = (_part_col_count - 1)*_part_row_count;
-        
-        shear_tlbr_count = (_part_row_count - 1) * (_part_col_count - 1);
-        shear_trbl_count = (_part_row_count - 1) * (_part_col_count - 1);
 
-        stiff_hori_count = (_part_row_count - 2)*_part_col_count;
-        stiff_vert_count = (_part_col_count - 2)*_part_row_count;
+        spring_hori_row_count = _part_row_count;
+        spring_hori_col_count = _part_col_count-1;
 
-        part_list = new Particle*[part_row_count];
-        for (int i=0; i<part_row_count; i++){
+        spring_vert_row_count = _part_row_count-1;
+        spring_vert_col_count = _part_col_count;
+
+        shear_tlbr_row_count = _part_row_count - 1;
+        shear_tlbr_col_count = _part_col_count - 1;
+        
+        shear_trbl_row_count = _part_row_count - 1;
+        shear_tlbr_col_count = _part_col_count - 1;
+
+        stiff_hori_row_count = _part_row_count;
+        stiff_hori_col_count = _part_col_count - 2;
+
+        stiff_vert_row_count = _part_row_count - 2;
+        stiff_vert_col_count = _part_col_count;
+
+        //initializing
+        part_list = new Particle*[part_row_count];    //Dynamically allocate an array of pointers
+        for (int i=0; i<part_row_count; i++){         //for each row, allocate an array of particles
           part_list[i] = new Particle[part_col_count];
         }
         
-        spring_hori = new Spring[spring_hori_count];
+        spring_hori = new Spring*[spring_hori_row_count]; //similar
+        for (int i=0; i<part_row_count; i++){
+          part_list[i] = new Particle[part_col_count];
+        }
+
         spring_vert = new Spring[spring_vert_count];
 
         stiff_vert = new Spring[stiff_vert_count];
