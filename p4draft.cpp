@@ -486,26 +486,95 @@
       shear_tlbr(NULL), shear_tlbr_row_count(0), shear_tlbr_col_count(0),
       shear_trbl(NULL), shear_trbl_row_count(0), shear_trbl_col_count(0),
       stiff_hori(NULL), stiff_hori_row_count(0), stiff_hori_col_count(0),
-      stiff_vert(NULL), stiff_vert_row_count(0), stiff_vert_col_count(0)`
+      stiff_vert(NULL), stiff_vert_row_count(0), stiff_vert_col_count(0)
       {}
       /**Destructor*/
       ~PhysSystem(){
-        if (part_list!=NULL){
+        if (part_list!=NULL) {
+          for (int i=0; i<part_row_count; i++){
+            if (part_list[i]!=NULL) {
+              delete [] part_list[i];
+              part_list[i] = NULL;
+            }
+          }
           delete [] part_list;
           part_list = NULL;
         }
-        if (spring_list!=NULL){
-          delete [] spring_list;
-          spring_list = NULL;
+        
+        if (spring_hori!=NULL) {
+          for (int i=0; i<spring_hori_row_count; i++){
+            if (spring_hori[i]!=NULL) {
+              delete [] spring_hori[i];
+              spring_hori[i] = NULL;
+            }
+          }
+          delete [] spring_hori;
+          spring_hori = NULL;
+        }
+
+        if (spring_vert!=NULL) {
+          for (int i=0; i<spring_vert_row_count; i++){
+            if (spring_vert[i]!=NULL) {
+              delete [] spring_vert[i];
+              spring_vert[i] = NULL;
+            }
+          }
+          delete [] spring_vert;
+          spring_vert = NULL;
+        }
+
+        if (shear_tlbr!=NULL) {
+          for (int i=0; i<shear_tlbr_row_count; i++){
+            if (shear_tlbr[i]!=NULL) {
+              delete [] shear_tlbr[i];
+              shear_tlbr[i] = NULL;
+            }
+          }
+          delete [] shear_tlbr;
+          shear_tlbr = NULL;
+        }
+
+        if (shear_trbl!=NULL) {
+          for (int i=0; i<shear_trbl_row_count; i++){
+            if (shear_trbl[i]!=NULL) {
+              delete [] shear_trbl[i];
+              shear_trbl[i] = NULL;
+            }
+          }
+          delete [] shear_trbl;
+          shear_trbl = NULL;
+        }
+
+        if (stiff_hori!=NULL) {
+          for (int i=0; i<stiff_hori_row_count; i++){
+            if (stiff_hori[i]!=NULL) {
+              delete [] stiff_hori[i];
+              stiff_hori[i] = NULL;
+            }
+          }
+          delete [] stiff_hori;
+          stiff_hori = NULL;
+        }
+
+        if (stiff_vert!=NULL) {
+          for (int i=0; i<stiff_vert_row_count; i++){
+            if (stiff_vert[i]!=NULL) {
+              delete [] stiff_vert[i];
+              stiff_vert[i] = NULL;
+            }
+          }
+          delete [] stiff_vert;
+          stiff_vert = NULL;
         }
       }
       //TODO: collision
       void timestep(float dT){
         accumGrav();
         springAllAct();
+        shearAllAct();
         stiffAllAct();
         partIntegrate(dT);
-        collisionCheckList();
+        // collisionCheckList();
       }
 
       void drawAll(float r=0.0f, float g=0.0f, float b=0.0f){
@@ -513,34 +582,48 @@
         //draw particles
         Vec3f p; //temp position of particle
         float p_r; //temp radius of particle
-        for (int i=0; i<part_count; i++){
-          p = part_list[i].s;
-          p_r = part_list[i].r;
+        for (int i=0; i<part_row_count; i++){
+          for (int j=0; j<part_col_count; j++){
+            p = part_list[i][j].s;
+            p_r = part_list[i][j].r;
 
-          glPushMatrix();
-            glTranslatef(p.x, p.y, p.z);
-            glutSolidSphere(p_r, 10, 10);
-          glPopMatrix();
+            glPushMatrix();
+              glTranslatef(p.x, p.y, p.z);
+              glutSolidSphere(p_r, 10, 10);
+            glPopMatrix();
+          }
         }
         //draw rope segment
         Vec3f p1;
         Vec3f p2;
         glLineWidth(7.0f);
-        for (int i=0; i<spring_count; i++){
-          p1 = spring_list[i].head->s;
-          p2 = spring_list[i].end ->s;
-          glBegin(GL_LINES);
-            glVertex3f(p1.x, p1.y, p1.z);
-            glVertex3f(p2.x, p2.y, p2.z);
-          glEnd();
+        for (int i=0; i<spring_hori_row_count; i++){
+          for (int j=0; j<spring_hori_col_count; j++){
+            p1 = spring_hori[i][j].head->s;
+            p2 = spring_hori[i][j].end ->s;
+            glBegin(GL_LINES);
+              glVertex3f(p1.x, p1.y, p1.z);
+              glVertex3f(p2.x, p2.y, p2.z);
+            glEnd();  
+          }
+        }
+        for (int i=0; i<spring_vert_row_count; i++){
+          for (int j=0; j<spring_vert_col_count; j++){
+            p1 = spring_vert[i][j].head->s;
+            p2 = spring_vert[i][j].end ->s;
+            glBegin(GL_LINES);
+              glVertex3f(p1.x, p1.y, p1.z);
+              glVertex3f(p2.x, p2.y, p2.z);
+            glEnd();  
+          }
         }
 
         //draw ball
-        glColor3f(r+0.3f, g+0.3f, b+0.3f);
-        glPushMatrix();
-            glTranslatef(ball.c.x, ball.c.y, ball.c.z);
-            glutSolidSphere(ball.r, 50, 50);
-        glPopMatrix();
+        // glColor3f(r+0.3f, g+0.3f, b+0.3f);
+        // glPushMatrix();
+        //     glTranslatef(ball.c.x, ball.c.y, ball.c.z);
+        //     glutSolidSphere(ball.r, 50, 50);
+        // glPopMatrix();
 
       }
   };
@@ -553,10 +636,10 @@
   int startTime = 0; 
   int prevTime = 0;
 
-  SolidBall global_ball = SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
+  // SolidBall global_ball = SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
   PhysSystem global_sys = PhysSystem(Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
-                                     Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z),
-                                     global_ball);
+                                     Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z)
+                                     );
 
   //tester
   // Particle p1(Vec3f(BALL_POSITION_X-30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
@@ -697,12 +780,12 @@ void keyboard (unsigned char key, int x, int y)
     case 32:
       pause = 1 - pause;
       break;
-    case 'w':
-      global_sys.ball.c = global_sys.ball.c - Vec3f(0, 0, BALL_TRANSLATION);
-    break;
-    case 's':
-      global_sys.ball.c = global_sys.ball.c + Vec3f(0, 0, BALL_TRANSLATION);
-    break;
+    // case 'w':
+    //   global_sys.ball.c = global_sys.ball.c - Vec3f(0, 0, BALL_TRANSLATION);
+    // break;
+    // case 's':
+    //   global_sys.ball.c = global_sys.ball.c + Vec3f(0, 0, BALL_TRANSLATION);
+    // break;
     default: 
     break;
   }
@@ -712,17 +795,17 @@ void arrow_keys (int a_keys, int x, int y)
 {
   switch(a_keys) 
   {
-    case GLUT_KEY_UP:
-      global_sys.ball.c = global_sys.ball.c + Vec3f(0, BALL_TRANSLATION, 0);
-    break;
-    case GLUT_KEY_DOWN: 
-      global_sys.ball.c = global_sys.ball.c - Vec3f(0, BALL_TRANSLATION, 0);
-    break;
-    case GLUT_KEY_LEFT:
-      global_sys.ball.c = global_sys.ball.c - Vec3f(BALL_TRANSLATION, 0, 0);
-    break;
-    case GLUT_KEY_RIGHT:
-      global_sys.ball.c = global_sys.ball.c + Vec3f(BALL_TRANSLATION, 0, 0);
+    // case GLUT_KEY_UP:
+    //   global_sys.ball.c = global_sys.ball.c + Vec3f(0, BALL_TRANSLATION, 0);
+    // break;
+    // case GLUT_KEY_DOWN: 
+    //   global_sys.ball.c = global_sys.ball.c - Vec3f(0, BALL_TRANSLATION, 0);
+    // break;
+    // case GLUT_KEY_LEFT:
+    //   global_sys.ball.c = global_sys.ball.c - Vec3f(BALL_TRANSLATION, 0, 0);
+    // break;
+    // case GLUT_KEY_RIGHT:
+    //   global_sys.ball.c = global_sys.ball.c + Vec3f(BALL_TRANSLATION, 0, 0);
     break;
     default:
     break;
