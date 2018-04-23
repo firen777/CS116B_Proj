@@ -77,6 +77,7 @@
     public:
       Vec3f s; //Current Position
       Vec3f s_prev; //Previous Position
+      Vec3f s_corr; //constraint correction vector
       float r;
       Vec3f a;
       int fixed; //to indicate whether the point is fixed or not
@@ -97,14 +98,15 @@
        * @param const Vec3f& _s, initial position of particle
       */
       Particle(const Vec3f& _s, float _r, int _fixed = FALSE): 
-        s(_s), s_prev(_s), r(_r), a(Vec3f()), fixed(_fixed){}
+        s(_s), s_prev(_s), s_corr(Vec3f()), r(_r), a(Vec3f()), fixed(_fixed){}
       /**Constructor
        * @param float x,y,z; initial position of particle
       */
       Particle(float x, float y, float z, float _r, int _fixed = FALSE):
-        s(Vec3f(x,y,z)), s_prev(Vec3f(x,y,z)), r(_r), a(Vec3f()), fixed(_fixed){}
+        s(Vec3f(x,y,z)), s_prev(Vec3f(x,y,z)), s_corr(Vec3f()), r(_r), a(Vec3f()), fixed(_fixed){}
       /**Default Constructor, set everything to 0*/
-      Particle():s(Vec3f()),s_prev(Vec3f()),r(0.0f),a(Vec3f()),fixed(FALSE){}
+      Particle():
+        s(Vec3f()),s_prev(Vec3f()),s_corr(Vec3f()),r(0.0f),a(Vec3f()),fixed(FALSE){}
       /**stepping w/ verlet integration
        * update s and s_prev
        * reset a in the process
@@ -127,9 +129,24 @@
         a = a + _a;
       }
 
+      /**Accumilate correction vector for constraints
+       * @param Vec3f _c; correction vector
+      */
+      void accumCorr(const Vec3f& _c){
+         s_corr = s_corr + _c;
+      }
+
       /** set s_prev according to desired v */
       void setV(const Vec3f& v) {
         s_prev = s - v*(TIMESTEP);
+      }
+
+      /**Correct the particle position according to correction vector. 
+       * reset the vector afterward
+      */
+      void partCorr(){
+        s = s + s_corr;
+        s_corr = Vec3f();
       }
 
   };
@@ -209,7 +226,7 @@
    *  k: constant (K/m)
    *  l: rest length of the spring
    * member func:
-   *  springAct(); act on the connected particles and assert the spring force (acceleration) on them
+   *  springAddA(); act on the connected particles and assert the spring force (acceleration) on them
   */
   class Spring {
     private:
@@ -231,7 +248,7 @@
        * 
        * invoke accumilateA on both head and end
       */
-      void springAct(){
+      void springAddA(){
         if (head!=NULL && end!=NULL){
           Vec3f head_to_end = end->s - head->s;
           float currL = head_to_end.getL();
@@ -241,11 +258,11 @@
         }
       }
 
-      /**Spring contraint to correct the the position of the particles
+      /**Spring accumilate contraint to correct the the position of the particles
        * in order to avoid super elasticity
        * 
       */
-      void springConstraint(){
+      void springAddConstraint(){
         if (head!=NULL && end!=NULL){
           Vec3f head_to_end = end->s - head->s;
           float currL = head_to_end.getL();
@@ -254,14 +271,14 @@
 
           if (currL > critL) { //exceed critical Length of a spring
             if (head->fixed==FALSE && end->fixed==FALSE) {
-              head->s = head->s + (currL - critL)/2.0f * direction;
-              end->s = end->s - (currL - critL)/2.0f * direction;
+              head->accumCorr((currL - critL)/2.0f * direction);
+              end->accumCorr (-(currL - critL)/2.0f * direction);
             } 
             else if (head->fixed==TRUE && end->fixed==FALSE){
-              end->s = end->s - (currL - critL) * direction;
+              end->accumCorr(-(currL - critL) * direction);
             }
             else if (head->fixed==FALSE && end->fixed==TRUE){
-              head->s = head->s + (currL - critL) * direction;
+              head->accumCorr((currL - critL) * direction);
             }
           }
         }
@@ -309,30 +326,30 @@
       }
 
       /**Command All spring to act. Delegate function*/
-      void springAllAct() {
+      void springAllAddA() {
         for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
-          spring_hori[i].springAct();
+          spring_hori[i].springAddA();
         }
         for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
-          spring_vert[i].springAct();
+          spring_vert[i].springAddA();
         }
       }
       /**Command All shear spring to act. Delegate function*/
-      void shearAllAct() {
+      void shearAllAddA() {
         for (int i=0; i<shear_tlbr_row_count * shear_tlbr_col_count; i++){
-          shear_tlbr[i].springAct();
+          shear_tlbr[i].springAddA();
         }
         for (int i=0; i<shear_trbl_row_count * shear_trbl_col_count; i++){
-          shear_trbl[i].springAct();
+          shear_trbl[i].springAddA();
         }
       }
       /**Command all stiff spring to act. Delegate function*/
-      void stiffAllAct() {
+      void stiffAllAddA() {
         for (int i=0; i<stiff_hori_row_count * stiff_hori_col_count; i++){
-          stiff_hori[i].springAct();
+          stiff_hori[i].springAddA();
         }
         for (int i=0; i<stiff_vert_row_count * stiff_vert_col_count; i++){
-          stiff_vert[i].springAct();
+          stiff_vert[i].springAddA();
         }
       }
       /**Command all particle to integrate. Delegate function*/
@@ -344,28 +361,40 @@
       /**Command all string to constraint. Delegate function*/
       void springAllConstraint(){
         for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
-          spring_hori[i].springConstraint();
+          spring_hori[i].springAddConstraint();
         }
+        partAllCorrect();
         for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
-          spring_vert[i].springConstraint();
+          spring_vert[i].springAddConstraint();
         }
+        partAllCorrect();
       }
       /**!!MAY NOT BE USED!!Command all string to constraint. Delegate function*/
       void shearAllConstraint(){
         for (int i=0; i<shear_tlbr_row_count * shear_tlbr_col_count; i++){
-          shear_tlbr[i].springConstraint();
+          shear_tlbr[i].springAddConstraint();
         }
+        partAllCorrect();
         for (int i=0; i<shear_trbl_row_count * shear_trbl_col_count; i++){
-          shear_trbl[i].springConstraint();
+          shear_trbl[i].springAddConstraint();
         }
+        partAllCorrect();
       }
       /**!!MAY NOT BE USED!!Command all string to constraint. Delegate function*/
       void stiffAllConstraint(){
         for (int i=0; i<stiff_hori_row_count * stiff_hori_col_count; i++){
-          stiff_hori[i].springConstraint();
+          stiff_hori[i].springAddConstraint();
         }
+        partAllCorrect();
         for (int i=0; i<stiff_vert_row_count * stiff_vert_col_count; i++){
-          stiff_vert[i].springConstraint();
+          stiff_vert[i].springAddConstraint();
+        }
+        partAllCorrect();
+      }
+      /**All Particle correct their position*/
+      void partAllCorrect(){
+        for (int i=0; i<part_row_count*part_col_count; i++){
+          part_list[i].partCorr();
         }
       }
 
@@ -529,13 +558,14 @@
       //TODO: collision
       void timestep(float dT){
         accumGrav();
-        springAllAct();
-        shearAllAct();
-        stiffAllAct();
+        springAllAddA();
+        shearAllAddA();
+        stiffAllAddA();
         partIntegrate(dT);
+
         springAllConstraint();
-        shearAllConstraint();
-        stiffAllConstraint();
+        // shearAllConstraint();
+        // stiffAllConstraint();
         // collisionCheckList();
       }
 
