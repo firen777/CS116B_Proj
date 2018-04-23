@@ -46,14 +46,14 @@
   #define TIMESTEP 0.05f  // 0.05 s per time step
 
   #define SPRING_L 8.0f //shouldn't use
-  #define SPRING_K 150.0f
+  #define SPRING_K 50.0f
 
   #define PART_POSITION_X_1 -30.0f
   #define PART_POSITION_X_2 30.0f
-  #define PART_POSITION_Y 8.0f
+  #define PART_POSITION_Y 20.0f
   #define PART_POSITION_Z -40.0f
-  #define PART_ROW_COUNT 20
-  #define PART_COL_COUNT 20
+  #define PART_ROW_COUNT 10
+  #define PART_COL_COUNT 10
   #define PART_RADIUS 0.5f
 // *************
 
@@ -83,17 +83,10 @@
       /**air drag
        * Force = 1/2 * (rho) * v^2 * K * Area
        * a = k * v^2
-       * 
-       * ...ANNNNNDDD it didn't work
       */
       void air_drag(){
         Vec3f v = s-s_prev;
-        // Vec3f drag_force = -(v).getUnit() * v.getL() * v.getL() * AIR_DRAG_K ;
-
-        // Vec3f drag_force = -(v).getUnit() * AIR_DRAG_K ;
-
         float v_scale = v.getL() / TIMESTEP;
-
         Vec3f drag_force = -(v).getUnit() * v_scale * AIR_DRAG_K ;
         
         accumA(drag_force);
@@ -119,20 +112,12 @@
       void verletStep(float dT) {
         if (fixed != TRUE) {
           Vec3f temp = s;
-          //Acceleration Dampening
-          // accumA((s_prev - s) * 0.2f * a.getL()); //-v dampening
-          
-          // float damp = 0.3f;
-          // if (a.getL()<=damp)
-          //   accumA(-a); //a thershold dampening
-          // else
-          //   accumA(-a.getUnit() * damp);
 
           air_drag();
           s = s + (s - s_prev)*DAMPEN_K + a*dT*dT;
           s_prev = temp;
         }
-        a = Vec3f();
+        a = Vec3f(); //reset acceleration to zero after a iteration
       }      
       /**Accumilate acceleration for next timestep update
        * @param Vec3f _a; acceleration
@@ -258,31 +243,31 @@
   /** "Director" of the physical world */
   class PhysSystem {
     private:
-      Particle** part_list;
+      Particle* part_list;
       int part_row_count; //how many rows
       int part_col_count; //each rows how many particles
       
-      Spring** spring_hori;
+      Spring* spring_hori;
       int spring_hori_row_count;
       int spring_hori_col_count;
 
-      Spring** spring_vert;
+      Spring* spring_vert;
       int spring_vert_row_count;
       int spring_vert_col_count;
 
-      Spring** shear_tlbr; //top left -- bottom right
+      Spring* shear_tlbr; //top left -- bottom right
       int shear_tlbr_row_count;
       int shear_tlbr_col_count;
 
-      Spring** shear_trbl; //top right -- bottom left
+      Spring* shear_trbl; //top right -- bottom left
       int shear_trbl_row_count;
       int shear_trbl_col_count;
 
-      Spring** stiff_hori;
+      Spring* stiff_hori;
       int stiff_hori_row_count;
       int stiff_hori_col_count;
 
-      Spring** stiff_vert;
+      Spring* stiff_vert;
       int stiff_vert_row_count;
       int stiff_vert_col_count;
 
@@ -290,59 +275,43 @@
     private:
       /**Accumilate gravity on all particles. Delegate function*/
       void accumGrav() {
-        for (int i=0; i<part_row_count; i++){
-          for (int j=0; j<part_col_count; j++){
-            part_list[i][j].accumA(Vec3f(0,-GRAVITY,0));
-          }
+        for (int i=0; i<part_row_count * part_col_count; i++){
+          part_list[i].accumA(Vec3f(0.0f,-GRAVITY,0.0f));
         }
       }
 
       /**Command All spring to act. Delegate function*/
       void springAllAct() {
-        for (int i=0; i<spring_hori_row_count; i++){
-          for (int j=0; i<spring_hori_col_count; j++) {
-            spring_hori[i][j].springAct();
-          }
+        for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
+          spring_hori[i].springAct();
         }
-        for (int i=0; i<spring_vert_row_count; i++){
-          for (int j=0; i<spring_vert_col_count; j++) {
-            spring_vert[i][j].springAct();
-          }
+
+        for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
+          spring_vert[i].springAct();
         }
       }
       /**Command All shear spring to act. Delegate function*/
       void shearAllAct() {
-        for (int i=0; i<shear_tlbr_row_count; i++){
-          for (int j=0; i<shear_tlbr_col_count; j++) {
-            shear_tlbr[i][j].springAct();
-          }
+        for (int i=0; i<shear_tlbr_row_count * shear_tlbr_col_count; i++){
+          shear_tlbr[i].springAct();
         }
-        for (int i=0; i<shear_trbl_row_count; i++){
-          for (int j=0; i<shear_trbl_col_count; j++) {
-            shear_trbl[i][j].springAct();
-          }
+        for (int i=0; i<shear_trbl_row_count * shear_trbl_col_count; i++){
+          shear_trbl[i].springAct();
         }
       }
-      /**Command all stiff spring to act...*/
+      /**Command all stiff spring to act. Delegate function*/
       void stiffAllAct() {
-        for (int i=0; i<stiff_hori_row_count; i++){
-          for (int j=0; i<stiff_hori_col_count; j++) {
-            stiff_hori[i][j].springAct();
-          }
+        for (int i=0; i<stiff_hori_row_count * stiff_hori_col_count; i++){
+          stiff_hori[i].springAct();
         }
-        for (int i=0; i<stiff_vert_row_count; i++){
-          for (int j=0; i<stiff_vert_col_count; j++) {
-            stiff_vert[i][j].springAct();
-          }
+        for (int i=0; i<stiff_vert_row_count * stiff_vert_col_count; i++){
+          stiff_vert[i].springAct();
         }
       }
-
       /**Command all particle to integrate. Delegate function*/
       void partIntegrate(float dT) {
-        for (int i=0; i<part_row_count; i++){
-          for (int j=0; j<part_col_count; j++){
-            part_list[i][j].verletStep(dT);
-          }
+        for (int i=0; i<part_row_count * part_col_count; i++){
+          part_list[i].verletStep(dT);
         }
       }
       
@@ -386,95 +355,72 @@
         stiff_vert_col_count = _part_col_count;
 
         //Memory Allocation
-        part_list = new Particle*[part_row_count];    //Dynamically allocate an array of pointers
-        for (int i=0; i<part_row_count; i++){         //for each row, allocate an array of particles
-          part_list[i] = new Particle[part_col_count];
-        }
+        part_list = new Particle[part_row_count * part_col_count];    //Dynamically allocate an array of pointers
+        spring_hori = new Spring[spring_hori_row_count * spring_hori_col_count]; //similar...
+        spring_vert = new Spring[spring_vert_row_count * spring_vert_col_count];
+        shear_tlbr = new Spring[shear_tlbr_row_count * shear_tlbr_col_count];
+        shear_trbl = new Spring[shear_trbl_row_count * shear_trbl_col_count];
+        stiff_hori = new Spring[stiff_hori_row_count * stiff_hori_col_count];
+        stiff_vert = new Spring[stiff_vert_row_count * stiff_vert_col_count];
         
-        spring_hori = new Spring*[spring_hori_row_count]; //similar...
-        for (int i=0; i<spring_hori_row_count; i++){
-          spring_hori[i] = new Spring[spring_hori_col_count];
-        }
-
-        spring_vert = new Spring*[spring_vert_row_count];
-        for (int i=0; i<spring_vert_row_count; i++){
-          spring_vert[i] = new Spring[spring_vert_col_count];
-        }
-
-        shear_tlbr = new Spring*[shear_tlbr_row_count];
-        for (int i=0; i<shear_tlbr_row_count; i++){
-          shear_tlbr[i] = new Spring[shear_tlbr_col_count];
-        }
-
-        shear_trbl = new Spring*[shear_trbl_row_count];
-        for (int i=0; i<shear_trbl_row_count; i++){
-          shear_trbl[i] = new Spring[shear_trbl_col_count];
-        }
-
-        stiff_hori = new Spring*[stiff_hori_row_count];
-        for (int i=0; i<stiff_hori_row_count; i++){
-          stiff_hori[i] = new Spring[stiff_hori_col_count];
-        }
-
-        stiff_vert = new Spring*[stiff_vert_row_count];
-        for (int i=0; i<stiff_vert_row_count; i++){
-          stiff_vert[i] = new Spring[stiff_vert_col_count];
-        }
-        
-
-
         //Initialization
         float segment_length = (topright - topleft).getL() / spring_hori_col_count;
         
         Vec3f head_end_direction = (topright - topleft).getUnit();
-        Vec3f down_direction = Vec3f(0,-1,0);
+        Vec3f down_direction(0,-1,0);
         
         Vec3f part_position = topleft;
 
         for (int i=0; i<part_row_count; i++){//outer loop for operating on which row
           for (int j=0; j<part_col_count; j++){ //inner loop for particles for each row
-            part_list[i][j] = Particle(part_position, PART_RADIUS);
-
+            part_list[i * part_col_count + j] = Particle(part_position, PART_RADIUS);
             part_position = part_position + head_end_direction * segment_length;
           }
           part_position = part_position - head_end_direction * segment_length * part_col_count;
-
           part_position = part_position + down_direction * segment_length;
-        }
+        } //[i]rows[j]columns
+        part_list[0].fixed = TRUE;
+        part_list[0 + part_col_count-1].fixed = TRUE;
 
         for (int i=0; i<spring_hori_row_count; i++){
           for (int j=0; j<spring_hori_col_count; j++) {
-            spring_hori[i][j] = Spring(&(part_list[i][j]), &(part_list[i][j+1]), SPRING_K, segment_length/1.0f);
+            spring_hori[i*spring_hori_col_count + j] = 
+              Spring(&(part_list[i*part_col_count + j]), &(part_list[i*part_col_count + j+1]), SPRING_K, segment_length/1.0f);
           }
-        }
+        } //[i][j] & [i][j+1]
 
         for (int i=0; i<spring_vert_row_count; i++){
           for (int j=0; j<spring_vert_col_count; j++) {
-            spring_vert[i][j] = Spring(&(part_list[i][j]), &(part_list[i+1][j]), SPRING_K, segment_length/1.0f);
+            spring_vert[i*spring_vert_col_count + j] = 
+              Spring(&(part_list[i*part_col_count + j]), &(part_list[(i+1)*part_col_count + j]), SPRING_K, segment_length/1.0f);
           }
-        }
+        } //[i][j] & [i+1][j]
 
         for (int i=0; i<shear_tlbr_row_count; i++){
           for (int j=0; j<shear_tlbr_col_count; j++) {
-            shear_tlbr[i][j] = Spring(&(part_list[i][j]), &(part_list[i+1][j+1]), SPRING_K, segment_length/0.707f);
+            shear_tlbr[i*shear_tlbr_col_count +j] = 
+              Spring(&(part_list[i*part_col_count + j]), &(part_list[(i+1)*part_col_count + j+1]), SPRING_K, segment_length/0.707f);
           }
-        }
+        } //[i][j] & [i+1][j+1]
 
         for (int i=0; i<shear_trbl_row_count; i++){
           for (int j=0; j<shear_trbl_col_count; j++) {
-            shear_trbl[i][j] = Spring(&(part_list[i+1][j]), &(part_list[i][j+1]), SPRING_K, segment_length/0.707f);
+            shear_trbl[i*shear_trbl_col_count + j] = 
+              Spring(&(part_list[(i+1)*part_col_count + j]), &(part_list[i*part_col_count + j+1]), SPRING_K, segment_length/0.707f);
           }
-        }
+        } //[i+1][j] & [i][j+1]
 
         for (int i=0; i<stiff_hori_row_count; i++){
           for (int j=0; j<stiff_hori_col_count; j++) {
-            stiff_hori[i][j] = Spring(&(part_list[i][j]), &(part_list[i][j+2]), SPRING_K, segment_length/0.5f);
+            stiff_hori[i*stiff_hori_col_count + j] = 
+              Spring(&(part_list[i*part_col_count + j]), &(part_list[i*part_col_count + j+2]), SPRING_K, segment_length/0.5f);
           }
-        }
+        } //[i][j] & [i][j+2]
 
         for (int i=0; i<stiff_vert_row_count; i++){
           for (int j=0; j<stiff_vert_col_count; j++) {
-            stiff_vert[i][j] = Spring(&(part_list[i][j]), &(part_list[i+2][j]), SPRING_K, segment_length/0.5f);
+            stiff_vert[i*stiff_vert_col_count + j] = 
+              Spring(&(part_list[i*part_col_count + j]), &(part_list[(i+2)*part_col_count + j]), SPRING_K, segment_length/0.5f);
           }
         }
       }
@@ -491,78 +437,36 @@
       /**Destructor*/
       ~PhysSystem(){
         if (part_list!=NULL) {
-          for (int i=0; i<part_row_count; i++){
-            if (part_list[i]!=NULL) {
-              delete [] part_list[i];
-              part_list[i] = NULL;
-            }
-          }
           delete [] part_list;
           part_list = NULL;
         }
         
         if (spring_hori!=NULL) {
-          for (int i=0; i<spring_hori_row_count; i++){
-            if (spring_hori[i]!=NULL) {
-              delete [] spring_hori[i];
-              spring_hori[i] = NULL;
-            }
-          }
           delete [] spring_hori;
           spring_hori = NULL;
         }
 
         if (spring_vert!=NULL) {
-          for (int i=0; i<spring_vert_row_count; i++){
-            if (spring_vert[i]!=NULL) {
-              delete [] spring_vert[i];
-              spring_vert[i] = NULL;
-            }
-          }
           delete [] spring_vert;
           spring_vert = NULL;
         }
 
         if (shear_tlbr!=NULL) {
-          for (int i=0; i<shear_tlbr_row_count; i++){
-            if (shear_tlbr[i]!=NULL) {
-              delete [] shear_tlbr[i];
-              shear_tlbr[i] = NULL;
-            }
-          }
           delete [] shear_tlbr;
           shear_tlbr = NULL;
         }
 
         if (shear_trbl!=NULL) {
-          for (int i=0; i<shear_trbl_row_count; i++){
-            if (shear_trbl[i]!=NULL) {
-              delete [] shear_trbl[i];
-              shear_trbl[i] = NULL;
-            }
-          }
           delete [] shear_trbl;
           shear_trbl = NULL;
         }
 
         if (stiff_hori!=NULL) {
-          for (int i=0; i<stiff_hori_row_count; i++){
-            if (stiff_hori[i]!=NULL) {
-              delete [] stiff_hori[i];
-              stiff_hori[i] = NULL;
-            }
-          }
           delete [] stiff_hori;
           stiff_hori = NULL;
         }
 
         if (stiff_vert!=NULL) {
-          for (int i=0; i<stiff_vert_row_count; i++){
-            if (stiff_vert[i]!=NULL) {
-              delete [] stiff_vert[i];
-              stiff_vert[i] = NULL;
-            }
-          }
           delete [] stiff_vert;
           stiff_vert = NULL;
         }
@@ -582,41 +486,49 @@
         //draw particles
         Vec3f p; //temp position of particle
         float p_r; //temp radius of particle
-        for (int i=0; i<part_row_count; i++){
-          for (int j=0; j<part_col_count; j++){
-            p = part_list[i][j].s;
-            p_r = part_list[i][j].r;
-
+        if (part_list != NULL) {
+          for (int i=0; i<part_row_count * part_col_count; i++){
+            p = part_list[i].s;
+            p_r = part_list[i].r;
             glPushMatrix();
               glTranslatef(p.x, p.y, p.z);
               glutSolidSphere(p_r, 10, 10);
             glPopMatrix();
           }
         }
+        // printf("asdf drawParts done\n");
+
         //draw rope segment
         Vec3f p1;
         Vec3f p2;
         glLineWidth(7.0f);
-        for (int i=0; i<spring_hori_row_count; i++){
-          for (int j=0; j<spring_hori_col_count; j++){
-            p1 = spring_hori[i][j].head->s;
-            p2 = spring_hori[i][j].end ->s;
-            glBegin(GL_LINES);
-              glVertex3f(p1.x, p1.y, p1.z);
-              glVertex3f(p2.x, p2.y, p2.z);
-            glEnd();  
+        if (spring_hori != NULL) {
+          for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
+            if (spring_hori[i].head!=NULL && spring_hori[i].end!=NULL) {
+              p1 = spring_hori[i].head->s;
+              p2 = spring_hori[i].end ->s;
+              glBegin(GL_LINES);
+                glVertex3f(p1.x, p1.y, p1.z);
+                glVertex3f(p2.x, p2.y, p2.z);
+              glEnd();  
+            }
           }
         }
-        for (int i=0; i<spring_vert_row_count; i++){
-          for (int j=0; j<spring_vert_col_count; j++){
-            p1 = spring_vert[i][j].head->s;
-            p2 = spring_vert[i][j].end ->s;
-            glBegin(GL_LINES);
-              glVertex3f(p1.x, p1.y, p1.z);
-              glVertex3f(p2.x, p2.y, p2.z);
-            glEnd();  
+        // printf("asdf draw spring_hori done\n");
+
+        if (spring_vert != NULL) {
+          for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
+            if (spring_vert[i].head!=NULL && spring_vert[i].end!=NULL) {
+              p1 = spring_vert[i].head->s;
+              p2 = spring_vert[i].end ->s;
+              glBegin(GL_LINES);
+                glVertex3f(p1.x, p1.y, p1.z);
+                glVertex3f(p2.x, p2.y, p2.z);
+              glEnd();  
+            }
           }
         }
+        // printf("asdf draw spring_vert done\n");
 
         //draw ball
         // glColor3f(r+0.3f, g+0.3f, b+0.3f);
@@ -631,13 +543,13 @@
 // **********************
 
 // * GLOBAL variables and Objects.
-  int pause = TRUE;
+  static int pause = TRUE;
   //timer start and prev time, in ms
-  int startTime = 0; 
-  int prevTime = 0;
+  static int startTime = 0; 
+  static int prevTime = 0;
 
   // SolidBall global_ball = SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
-  PhysSystem global_sys = PhysSystem(Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
+  static PhysSystem global_sys = PhysSystem(Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
                                      Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z)
                                      );
 
@@ -747,6 +659,7 @@ void display (void)
   // glTranslatef (-6.5, 0, -4.0f); // move camera out and center on the rope
   // global_sys.timestep(1.1f);
   global_sys.drawAll(0.0f, 0.5f, 0.0f);
+  // printf("asdf drawAll done\n");
   // testDraw();
 
   glutSwapBuffers();
