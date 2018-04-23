@@ -39,19 +39,20 @@
 
   #define BALL_TRANSLATION 0.5f
 
-  #define GRAVITY 10.0f
+  #define GRAVITY 250.0f
   #define AIR_DRAG_K 0.1f
   #define DAMPEN_K 0.97f
   #define TIMERMSECS 1 // 5 ms per timer step
   #define TIMESTEP 0.01f  // 0.05 s per time step
 
   #define SPRING_L 8.0f //shouldn't use
-  #define SPRING_K 16.0f
+  #define SPRING_K 160.0f
+  #define SPRING_C 0.01f //Spring constraint constant. 10% more of it's rest length at most
 
-  #define PART_POSITION_X_1 -40.0f
-  #define PART_POSITION_X_2 40.0f
-  #define PART_POSITION_Y 30.0f
-  #define PART_POSITION_Z -70.0f
+  #define PART_POSITION_X_1 -60.0f
+  #define PART_POSITION_X_2 60.0f
+  #define PART_POSITION_Y 50.0f
+  #define PART_POSITION_Z -100.0f
   #define PART_ROW_COUNT 50
   #define PART_COL_COUNT 50
   #define PART_RADIUS 0.5f
@@ -214,15 +215,16 @@
     private:
       float k; 
       float l;
+      float c; //constraint constant
     public:
       Particle* head;
       Particle* end;
     public:
       /**Constructor*/
-      Spring(Particle* _head, Particle* _end, float _k=SPRING_K, float _l=SPRING_L)
-        :head(_head), end(_end), k(_k), l(_l){}
+      Spring(Particle* _head, Particle* _end, float _k=SPRING_K, float _l=SPRING_L, float _c=SPRING_C)
+        :head(_head), end(_end), k(_k), l(_l), c(_c){}
       /**Default Constructor, set everything to 0 or NULL*/
-      Spring():head(NULL),end(NULL),k(0.0f),l(0.0f){}
+      Spring():head(NULL),end(NULL),k(0.0f),l(0.0f),c(0.0f){}
       /**Hooke's Law, F=kx; a=(k/m)x.
        * Since we only care about acceleration here,
        * let (k/m) be another constant.
@@ -231,11 +233,37 @@
       */
       void springAct(){
         if (head!=NULL && end!=NULL){
-          Vec3f direction = end->s - head->s;
-          float currL = direction.getL();
-          Vec3f x = (currL - l) * direction.getUnit();
+          Vec3f head_to_end = end->s - head->s;
+          float currL = head_to_end.getL();
+          Vec3f x = (currL - l) * head_to_end.getUnit();
           head->accumA(k*x);
           end->accumA(-k*x);
+        }
+      }
+
+      /**Spring contraint to correct the the position of the particles
+       * in order to avoid super elasticity
+       * 
+      */
+      void springConstraint(){
+        if (head!=NULL && end!=NULL){
+          Vec3f head_to_end = end->s - head->s;
+          float currL = head_to_end.getL();
+          float critL = l * (1.0f + c);
+          Vec3f direction = head_to_end.getUnit();
+
+          if (currL > critL) { //exceed critical Length of a spring
+            if (head->fixed==FALSE && end->fixed==FALSE) {
+              head->s = head->s + (currL - critL)/2.0f * direction;
+              end->s = end->s - (currL - critL)/2.0f * direction;
+            } 
+            else if (head->fixed==TRUE && end->fixed==FALSE){
+              end->s = end->s - (currL - critL) * direction;
+            }
+            else if (head->fixed==FALSE && end->fixed==TRUE){
+              head->s = head->s + (currL - critL) * direction;
+            }
+          }
         }
       }
   };
@@ -285,7 +313,6 @@
         for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
           spring_hori[i].springAct();
         }
-
         for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
           spring_vert[i].springAct();
         }
@@ -314,16 +341,44 @@
           part_list[i].verletStep(dT);
         }
       }
+      /**Command all string to constraint. Delegate function*/
+      void springAllConstraint(){
+        for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
+          spring_hori[i].springConstraint();
+        }
+        for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
+          spring_vert[i].springConstraint();
+        }
+      }
+      /**!!MAY NOT BE USED!!Command all string to constraint. Delegate function*/
+      void shearAllConstraint(){
+        for (int i=0; i<shear_tlbr_row_count * shear_tlbr_col_count; i++){
+          shear_tlbr[i].springConstraint();
+        }
+        for (int i=0; i<shear_trbl_row_count * shear_trbl_col_count; i++){
+          shear_trbl[i].springConstraint();
+        }
+      }
+      /**!!MAY NOT BE USED!!Command all string to constraint. Delegate function*/
+      void stiffAllConstraint(){
+        for (int i=0; i<stiff_hori_row_count * stiff_hori_col_count; i++){
+          stiff_hori[i].springConstraint();
+        }
+        for (int i=0; i<stiff_vert_row_count * stiff_vert_col_count; i++){
+          stiff_vert[i].springConstraint();
+        }
+      }
+
       
       // /**Particle colliding with ball*/ //not needed in Project 4
-      // void collisionCheckList() {
-      //   for (int i=0; i<part_count; i++){
-      //     if (ball.isHit(part_list[i])){
-      //       Vec3f corrected_position = ball.c + ball.surfaceNormal(part_list[i]) * (ball.r + part_list[i].r);
-      //       part_list[i].s = corrected_position;
-      //       part_list[i].s_prev = corrected_position;
-      //     }
-      //   }
+        // void collisionCheckList() {
+        //   for (int i=0; i<part_count; i++){
+        //     if (ball.isHit(part_list[i])){
+        //       Vec3f corrected_position = ball.c + ball.surfaceNormal(part_list[i]) * (ball.r + part_list[i].r);
+        //       part_list[i].s = corrected_position;
+        //       part_list[i].s_prev = corrected_position;
+        //     }
+        //   }
       // }
       
     public:
@@ -426,13 +481,13 @@
       }
       /**Default Constructor, set all to 0 or NULL*/
       PhysSystem (): 
-      part_list(NULL), part_row_count(0), part_col_count(0), 
-      spring_hori(NULL), spring_hori_row_count(0), spring_hori_col_count(0),
-      spring_vert(NULL), spring_vert_row_count(0), spring_vert_col_count(0),
-      shear_tlbr(NULL), shear_tlbr_row_count(0), shear_tlbr_col_count(0),
-      shear_trbl(NULL), shear_trbl_row_count(0), shear_trbl_col_count(0),
-      stiff_hori(NULL), stiff_hori_row_count(0), stiff_hori_col_count(0),
-      stiff_vert(NULL), stiff_vert_row_count(0), stiff_vert_col_count(0)
+        part_list(NULL), part_row_count(0), part_col_count(0), 
+        spring_hori(NULL), spring_hori_row_count(0), spring_hori_col_count(0),
+        spring_vert(NULL), spring_vert_row_count(0), spring_vert_col_count(0),
+        shear_tlbr(NULL), shear_tlbr_row_count(0), shear_tlbr_col_count(0),
+        shear_trbl(NULL), shear_trbl_row_count(0), shear_trbl_col_count(0),
+        stiff_hori(NULL), stiff_hori_row_count(0), stiff_hori_col_count(0),
+        stiff_vert(NULL), stiff_vert_row_count(0), stiff_vert_col_count(0)
       {}
       /**Destructor*/
       ~PhysSystem(){
@@ -478,6 +533,9 @@
         shearAllAct();
         stiffAllAct();
         partIntegrate(dT);
+        springAllConstraint();
+        shearAllConstraint();
+        stiffAllConstraint();
         // collisionCheckList();
       }
 
@@ -729,11 +787,11 @@ void drawBackground(){
   glDisable (GL_LIGHTING);
   glBegin (GL_POLYGON); //Skyblue Background 
     glColor3f (0.8f, 0.8f, 1.0f);
-    glVertex3f (-200.0f, -100.0f, -100.0f);
-    glVertex3f (200.0f, -100.0f, -100.0f);
+    glVertex3f (-400.0f, -400.0f, -200.0f);
+    glVertex3f (400.0f, -400.0f, -200.0f);
     glColor3f (0.4f, 0.4f, 0.8f);	
-    glVertex3f (200.0f, 100.0f, -100.0f);
-    glVertex3f (-200.0f, 100.0f, -100.0f);
+    glVertex3f (400.0f, 400.0f, -200.0f);
+    glVertex3f (-400.0f, 400.0f, -200.0f);
   glEnd ();
 }
 
