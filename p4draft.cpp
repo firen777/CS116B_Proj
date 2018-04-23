@@ -47,7 +47,7 @@
 
   #define SPRING_L 8.0f //shouldn't use
   #define SPRING_K 160.0f
-  #define SPRING_C 0.01f //Spring constraint constant. 10% more of it's rest length at most
+  #define SPRING_C 0.001f //Spring constraint constant. 10% more of it's rest length at most
 
   #define PART_POSITION_X_1 -60.0f
   #define PART_POSITION_X_2 60.0f
@@ -271,14 +271,20 @@
 
           if (currL > critL) { //exceed critical Length of a spring
             if (head->fixed==FALSE && end->fixed==FALSE) {
-              head->accumCorr((currL - critL)/2.0f * direction);
-              end->accumCorr (-(currL - critL)/2.0f * direction);
+              head->accumCorr((currL - critL)* 0.5f * direction);
+              end->accumCorr (-(currL - critL)* 0.5f * direction);
+
+
+              head->partCorr();
+              end->partCorr();
             } 
             else if (head->fixed==TRUE && end->fixed==FALSE){
               end->accumCorr(-(currL - critL) * direction);
+              end->partCorr();
             }
             else if (head->fixed==FALSE && end->fixed==TRUE){
               head->accumCorr((currL - critL) * direction);
+              head->partCorr();
             }
           }
         }
@@ -363,11 +369,11 @@
         for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
           spring_hori[i].springAddConstraint();
         }
-        partAllCorrect();
+        // partAllCorrect();
         for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
           spring_vert[i].springAddConstraint();
         }
-        partAllCorrect();
+        // partAllCorrect();
       }
       /**!!MAY NOT BE USED!!Command all string to constraint. Delegate function*/
       void shearAllConstraint(){
@@ -430,7 +436,7 @@
         shear_tlbr_col_count = _part_col_count - 1;
         
         shear_trbl_row_count = _part_row_count - 1;
-        shear_tlbr_col_count = _part_col_count - 1;
+        shear_trbl_col_count = _part_col_count - 1;
 
         stiff_hori_row_count = _part_row_count;
         stiff_hori_col_count = _part_col_count - 2;
@@ -464,7 +470,9 @@
           part_position = part_position + down_direction * segment_length;
         } //[i]rows[j]columns
         part_list[0].fixed = TRUE;
+        part_list[1].fixed = TRUE;
         part_list[0 + part_col_count-1].fixed = TRUE;
+        part_list[0 + part_col_count-2].fixed = TRUE;
 
         for (int i=0; i<spring_hori_row_count; i++){
           for (int j=0; j<spring_hori_col_count; j++) {
@@ -564,32 +572,32 @@
         partIntegrate(dT);
 
         springAllConstraint();
-        // shearAllConstraint();
-        // stiffAllConstraint();
+        shearAllConstraint();
+        stiffAllConstraint();
         // collisionCheckList();
       }
 
       void drawAll(float r=0.0f, float g=0.0f, float b=0.0f){
-        glColor3f(r,g,b);
-        //draw particles
-        Vec3f p; //temp position of particle
-        float p_r; //temp radius of particle
-        if (part_list != NULL) {
-          for (int i=0; i<part_row_count * part_col_count; i++){
-            p = part_list[i].s;
-            p_r = part_list[i].r;
-            glPushMatrix();
-              glTranslatef(p.x, p.y, p.z);
-              glutSolidSphere(p_r, 10, 10);
-            glPopMatrix();
-          }
-        }
-        // printf("asdf drawParts done\n");
+        // glColor3f(r,g,b);
+        // //draw particles
+        // Vec3f p; //temp position of particle
+        // float p_r; //temp radius of particle
+        // if (part_list != NULL) {
+        //   for (int i=0; i<part_row_count * part_col_count; i++){
+        //     p = part_list[i].s;
+        //     p_r = part_list[i].r;
+        //     glPushMatrix();
+        //       glTranslatef(p.x, p.y, p.z);
+        //       glutSolidSphere(p_r, 10, 10);
+        //     glPopMatrix();
+        //   }
+        // }
+        // // printf("asdf drawParts done\n");
 
         //draw rope segment
         Vec3f p1;
         Vec3f p2;
-        glLineWidth(7.0f);
+        glLineWidth(3.0f);
         if (spring_hori != NULL) {
           for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
             if (spring_hori[i].head!=NULL && spring_hori[i].end!=NULL) {
