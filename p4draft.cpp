@@ -39,19 +39,19 @@
 
   #define BALL_TRANSLATION 0.5f
 
-  #define GRAVITY 100.0f
+  #define GRAVITY 20.0f
   #define AIR_DRAG_K 0.1f
-  #define DAMPEN_K 0.97f
+  #define DAMPEN_K 0.99f
   #define TIMERMSECS 1 // 1 ms per timer step
   #define TIMESTEP 0.01f  // 0.01 s per time step
 
   #define SPRING_L 8.0f //shouldn't use
-  #define SPRING_K 100.0f
+  #define SPRING_K 20.0f
   #define SPRING_C 0.01f //Spring constraint constant. 10% more of it's rest length at most
 
   #define PART_POSITION_X_1 -5.0f
   #define PART_POSITION_X_2 5.0f
-  #define PART_POSITION_Y 3.0f
+  #define PART_POSITION_Y 6.0f
   #define PART_POSITION_Z -10.0f
   #define PART_ROW_COUNT 50
   #define PART_COL_COUNT 50
@@ -119,7 +119,7 @@
         if (fixed != TRUE) {
           Vec3f temp = s;
 
-          air_drag();
+          // air_drag();
           s = s + (s - s_prev)*DAMPEN_K + a*dT*dT;
           s_prev = temp;
         }
@@ -274,21 +274,36 @@
           float critL = l * (1.0f + c);
           Vec3f direction = head_to_end.getUnit();
 
-          // if (currL > critL) { //exceed critical Length of a spring
           if (head->fixed==FALSE && end->fixed==FALSE) {
             head->accumCorr((currL - critL)* 0.5f * direction);
             end->accumCorr (-(currL - critL)* 0.5f * direction);
 
             head->partCorr();
             end->partCorr();
+
+            // head->accumCorr(head_to_end * (1.0f - l/currL) * 0.5f);
+            // end->accumCorr(head_to_end * (1.0f - l/currL) * -0.5f);
+
+            // head->partCorr();
+            // end->partCorr();
           } 
           else if (head->fixed==TRUE && end->fixed==FALSE){
             end->accumCorr(-(currL - critL) * direction);
+
             end->partCorr();
+            
+            // end->accumCorr(head_to_end * (1.0f - l/currL) * -1.0f);
+
+            // end->partCorr();
           }
           else if (head->fixed==FALSE && end->fixed==TRUE){
             head->accumCorr((currL - critL) * direction);
+
             head->partCorr();
+            
+            // head->accumCorr(head_to_end * (1.0f - l/currL) * 1.0f);
+
+            // head->partCorr();
           }
 
         }
@@ -408,11 +423,11 @@
         }
       }
 
-      /** +- 0.00001f to 5.00001f */
+      /** +- 0.00001f to 50.00001f */
       float nextRand(void)
       {
         //0.00001f to 5.00001f
-        float ans = (float)rand()/(float)(RAND_MAX/5.0f)+0.00001f;
+        float ans = (float)rand()/(float)(RAND_MAX/50.0f)+0.00001f;
         // 50% +, 50% -
         if (rand()%2 == 1)
           ans *= -1.0;
@@ -482,14 +497,12 @@
           part_position = part_position - head_end_direction * segment_length * part_col_count;
           part_position = part_position + down_direction * segment_length;
         } //[i]rows[j]columns
-        // part_list[0].fixed = TRUE;
-        // part_list[1].fixed = TRUE;
-        // part_list[2].fixed = TRUE;
-        // // part_list[3].fixed = TRUE;
-        // part_list[0 + part_col_count-1].fixed = TRUE;
-        // part_list[0 + part_col_count-2].fixed = TRUE;
-        // part_list[0 + part_col_count-3].fixed = TRUE;
-        // part_list[0 + part_col_count-4].fixed = TRUE;
+        part_list[0].fixed = TRUE;
+        part_list[1].fixed = TRUE;
+        part_list[2].fixed = TRUE;
+        part_list[0 + part_col_count-1].fixed = TRUE;
+        part_list[0 + part_col_count-2].fixed = TRUE;
+        part_list[0 + part_col_count-3].fixed = TRUE;
 
         for (int i=0; i<spring_hori_row_count; i++){
           for (int j=0; j<spring_hori_col_count; j++) {
@@ -586,11 +599,24 @@
         springAllAddA();
         shearAllAddA();
         stiffAllAddA();
-        partIntegrate(dT);
-
+        
         springAllConstraint();
         shearAllConstraint();
         stiffAllConstraint();
+
+        // springAllConstraint();
+        // shearAllConstraint();
+        // stiffAllConstraint();
+
+        // springAllConstraint();
+        // shearAllConstraint();
+        // stiffAllConstraint();
+
+        // springAllConstraint();
+        // shearAllConstraint();
+        // stiffAllConstraint();
+
+        partIntegrate(dT);
         // collisionCheckList();
       }
 
@@ -701,6 +727,8 @@
           part_list[i].accumA(Vec3f(nextRand(), nextRand(), nextRand()));
         }
       }
+
+      void reset(){}
   };
 
 // **********************
@@ -864,7 +892,7 @@ void keyboard (unsigned char key, int x, int y)
       global_sys.randA();
     break;
     case 'r':
-
+      global_sys.reset();
     break;
     // case 'w':
     //   global_sys.ball.c = global_sys.ball.c - Vec3f(0, 0, BALL_TRANSLATION);
