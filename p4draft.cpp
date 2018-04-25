@@ -39,20 +39,20 @@
 
   #define BALL_TRANSLATION 0.5f
 
-  #define GRAVITY 250.0f
+  #define GRAVITY 15.0f
   #define AIR_DRAG_K 0.1f
   #define DAMPEN_K 0.97f
   #define TIMERMSECS 1 // 5 ms per timer step
   #define TIMESTEP 0.01f  // 0.05 s per time step
 
   #define SPRING_L 8.0f //shouldn't use
-  #define SPRING_K 160.0f
-  #define SPRING_C 0.001f //Spring constraint constant. 10% more of it's rest length at most
+  #define SPRING_K 15.0f
+  #define SPRING_C 0.01f //Spring constraint constant. 10% more of it's rest length at most
 
-  #define PART_POSITION_X_1 -60.0f
-  #define PART_POSITION_X_2 60.0f
-  #define PART_POSITION_Y 50.0f
-  #define PART_POSITION_Z -100.0f
+  #define PART_POSITION_X_1 -5.0f
+  #define PART_POSITION_X_2 5.0f
+  #define PART_POSITION_Y 3.0f
+  #define PART_POSITION_Z -10.0f
   #define PART_ROW_COUNT 50
   #define PART_COL_COUNT 50
   #define PART_RADIUS 0.5f
@@ -63,6 +63,7 @@
    * member var: 
    *  s: Current Position to be drawn
    *  s_prev: Previous position. Used for Verlet
+   *  s_corr: correction vector. Used for displacement correction.
    *  r: collision radius of the particle
    *  a: acceleration that will be used in Verlet integration during next timestep. Reset after integration.
    *  fixed: indicate whether the particle is fixed or not
@@ -71,6 +72,8 @@
    *    as well as replace s_prev and resetting a. Fixed particle have no effect.
    *  accumA(Vec3f _a): Accumilating a via simple vector addition
    *  setV(Vec3f v): EXPERIMENTAL: hacky way to mimick velocity by manipulating the s_prev accordingly.
+   *  accumCorr(Vec3f _c): accumilate correction vector
+   *  partCorrect(): add s_corr to s and reset s_corr afterward.
    *  
   */
   class Particle {
@@ -225,8 +228,10 @@
    *  end ptr: pointer to another end of the spring
    *  k: constant (K/m)
    *  l: rest length of the spring
+   *  c: spring constraint constant, percentage of the maximum deformation allowed in a spring
    * member func:
    *  springAddA(); act on the connected particles and assert the spring force (acceleration) on them
+   *  springAddConstraint(); add the correction vector to head and/or end particles according to c and correct them immediately
   */
   class Spring {
     private:
@@ -403,7 +408,16 @@
         }
       }
 
-      
+      /** +- 0.00001f to 5.00001f */
+      float nextRand(void)
+      {
+        //0.00001f to 5.00001f
+        float ans = (float)rand()/(float)(RAND_MAX/5.0f)+0.00001f;
+        // 50% +, 50% -
+        if (rand()%2 == 1)
+          ans *= -1.0;
+        return ans;
+      }
       // /**Particle colliding with ball*/ //not needed in Project 4
         // void collisionCheckList() {
         //   for (int i=0; i<part_count; i++){
@@ -469,9 +483,13 @@
           part_position = part_position + down_direction * segment_length;
         } //[i]rows[j]columns
         part_list[0].fixed = TRUE;
-        part_list[1].fixed = TRUE;
+        // part_list[1].fixed = TRUE;
+        // part_list[2].fixed = TRUE;
+        // part_list[3].fixed = TRUE;
         part_list[0 + part_col_count-1].fixed = TRUE;
-        part_list[0 + part_col_count-2].fixed = TRUE;
+        // part_list[0 + part_col_count-2].fixed = TRUE;
+        // part_list[0 + part_col_count-3].fixed = TRUE;
+        // part_list[0 + part_col_count-4].fixed = TRUE;
 
         for (int i=0; i<spring_hori_row_count; i++){
           for (int j=0; j<spring_hori_col_count; j++) {
@@ -577,6 +595,8 @@
       }
 
       void drawAll(float r=0.0f, float g=0.0f, float b=0.0f){
+        //DEBUG VERSION
+
         // glColor3f(r,g,b);
         // //draw particles
         // Vec3f p; //temp position of particle
@@ -593,36 +613,36 @@
         // }
         // // printf("asdf drawParts done\n");
 
-        //draw rope segment
-        Vec3f p1;
-        Vec3f p2;
-        glLineWidth(3.0f);
-        if (spring_hori != NULL) {
-          for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
-            if (spring_hori[i].head!=NULL && spring_hori[i].end!=NULL) {
-              p1 = spring_hori[i].head->s;
-              p2 = spring_hori[i].end ->s;
-              glBegin(GL_LINES);
-                glVertex3f(p1.x, p1.y, p1.z);
-                glVertex3f(p2.x, p2.y, p2.z);
-              glEnd();  
-            }
-          }
-        }
-        // printf("asdf draw spring_hori done\n");
+        // //draw rope segment
+        // Vec3f p1;
+        // Vec3f p2;
+        // glLineWidth(3.0f);
+        // if (spring_hori != NULL) {
+        //   for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
+        //     if (spring_hori[i].head!=NULL && spring_hori[i].end!=NULL) {
+        //       p1 = spring_hori[i].head->s;
+        //       p2 = spring_hori[i].end ->s;
+        //       glBegin(GL_LINES);
+        //         glVertex3f(p1.x, p1.y, p1.z);
+        //         glVertex3f(p2.x, p2.y, p2.z);
+        //       glEnd();  
+        //     }
+        //   }
+        // }
+        // // printf("asdf draw spring_hori done\n");
 
-        if (spring_vert != NULL) {
-          for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
-            if (spring_vert[i].head!=NULL && spring_vert[i].end!=NULL) {
-              p1 = spring_vert[i].head->s;
-              p2 = spring_vert[i].end ->s;
-              glBegin(GL_LINES);
-                glVertex3f(p1.x, p1.y, p1.z);
-                glVertex3f(p2.x, p2.y, p2.z);
-              glEnd();  
-            }
-          }
-        }
+        // if (spring_vert != NULL) {
+        //   for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
+        //     if (spring_vert[i].head!=NULL && spring_vert[i].end!=NULL) {
+        //       p1 = spring_vert[i].head->s;
+        //       p2 = spring_vert[i].end ->s;
+        //       glBegin(GL_LINES);
+        //         glVertex3f(p1.x, p1.y, p1.z);
+        //         glVertex3f(p2.x, p2.y, p2.z);
+        //       glEnd();  
+        //     }
+        //   }
+        // }
         // printf("asdf draw spring_vert done\n");
 
         //draw ball
@@ -632,6 +652,54 @@
         //     glutSolidSphere(ball.r, 50, 50);
         // glPopMatrix();
 
+        //==================================//
+        //FINAL VERSION
+        Vec3f p1;
+        Vec3f p2;
+        Vec3f p3;
+        Vec3f normal;
+
+        glColor3f(r,g,b);
+        for (int i=0; i<part_row_count-1; i++){
+          for (int j=0; j<part_col_count-1; j++){
+            p1 = part_list[i*part_row_count + j].s;
+            p2 = part_list[(i+1)*part_row_count + j].s;
+            p3 = part_list[i*part_row_count + j+1].s;
+            normal = Vec3f(p1,p2,p3).getUnit();
+            glNormal3f(normal.x, normal.y, normal.z);
+            glBegin(GL_TRIANGLES);
+              
+              glVertex3f(p1.x, p1.y, p1.z);
+              glVertex3f(p2.x, p2.y, p2.z);
+              glVertex3f(p3.x, p3.y, p3.z);
+            glEnd();
+          }
+        }
+
+        glColor3f(1.0f,1.0f,1.0f);
+        for (int i=0; i<part_row_count-1; i++){
+          for (int j=0; j<part_col_count-1; j++){
+            p1 = part_list[i*part_row_count + j+1].s;
+            p2 = part_list[(i+1)*part_row_count + j].s;
+            p3 = part_list[(i+1)*part_row_count + j+1].s;
+            normal = Vec3f(p1,p2,p3).getUnit();
+            
+            glNormal3f(normal.x, normal.y, normal.z);
+            glBegin(GL_TRIANGLES);
+              glVertex3f(p1.x, p1.y, p1.z);
+              glVertex3f(p2.x, p2.y, p2.z);
+              glVertex3f(p3.x, p3.y, p3.z);
+            glEnd();
+          }
+        }
+
+      }
+
+      /**Random acceleration to all particle*/
+      void randA(){
+        for (int i=0; i<part_row_count*part_col_count; i++){
+          part_list[i].accumA(Vec3f(nextRand(), nextRand(), nextRand()));
+        }
       }
   };
 
@@ -722,15 +790,41 @@ int main (int argc, char *argv[])
 
 void init (void)
 {
-  glShadeModel (GL_SMOOTH);
-  glClearColor (0.2f, 0.2f, 0.4f, 0.5f);				
-  glClearDepth (1.0f);
+  // glShadeModel (GL_SMOOTH);
+  // glClearColor (0.2f, 0.2f, 0.4f, 0.5f);				
+  // glClearDepth (1.0f);
+  // glEnable (GL_DEPTH_TEST);
+  // glDepthFunc (GL_LEQUAL);
+  // glEnable (GL_COLOR_MATERIAL);
+  // glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+  // glEnable (GL_LIGHTING);
+  // glEnable (GL_LIGHT0);
+  // GLfloat lightPos[4] = {-2.0, 1.0, 2.0, 0.0};
+  // // GLfloat lightPos[4] = {-0.0, 0.0, 0.0, 0.0};
+  // glLightfv (GL_LIGHT0, GL_POSITION, (GLfloat *) &lightPos);
+  // glEnable (GL_LIGHT1);
+  // GLfloat lightAmbient1[4] = {0.0, 0.0,  0.0, 0.0};
+  // GLfloat lightPos1[4]     = {1.0, 0.0, -0.2, 0.0};
+  // GLfloat lightDiffuse1[4] = {0.5, 0.5,  0.3, 0.0};
+  // glLightfv (GL_LIGHT1,GL_POSITION, (GLfloat *) &lightPos1);
+  // glLightfv (GL_LIGHT1,GL_AMBIENT, (GLfloat *) &lightAmbient1);
+  // glLightfv (GL_LIGHT1,GL_DIFFUSE, (GLfloat *) &lightDiffuse1);
+  // glLightModeli (GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+  // glLightModeli (GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+
+  //================//
+  srand((unsigned int)time(NULL));
+  glShadeModel (GL_SMOOTH); //<<
+  // glShadeModel (GL_FLAT);
+  glClearColor (0.5f, 0.5f, 0.5f, 0.0f);
+  glClearDepth (1.0f);  //<<
+  // glClearDepth (5.0f);
   glEnable (GL_DEPTH_TEST);
-  glDepthFunc (GL_LEQUAL);
-  glEnable (GL_COLOR_MATERIAL);
-  glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-  glEnable (GL_LIGHTING);
-  glEnable (GL_LIGHT0);
+  glDepthFunc (GL_LEQUAL); //GL_LEQUAL, also have GL_LESS, GL_GREATER...
+  glEnable (GL_COLOR_MATERIAL); //<<when light hit the surface, give off the surface color. else grey scale
+  glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); //GL_PERSPECTIVE_CORRECTION_HINT, ... ;GL_NICEST, also GL_FASTEST
+  glEnable (GL_LIGHTING); //<< removed become single shade with no shadow, looks like ambient reflection
+  glEnable (GL_LIGHT0); //<< ...brighter?
   GLfloat lightPos[4] = {-1.0, 1.0, 0.5, 0.0};
   glLightfv (GL_LIGHT0, GL_POSITION, (GLfloat *) &lightPos);
   glEnable (GL_LIGHT1);
@@ -753,12 +847,19 @@ void display (void)
   glEnable (GL_LIGHTING);
   // glTranslatef (-6.5, 0, -4.0f); // move camera out and center on the rope
   // global_sys.timestep(1.1f);
-  global_sys.drawAll(0.0f, 0.5f, 0.0f);
   // printf("asdf drawAll done\n");
   // testDraw();
+  // glPushMatrix();
+  //   glTranslatef(0,0,-10);
+  //   glutSolidSphere (1.0, 20, 16);
+  // glPopMatrix();
+
+  global_sys.drawAll(0.0f, 1.0f, 0.0f);
 
   glutSwapBuffers();
   glutPostRedisplay();
+
+  glFlush();
 }
 
 void reshape (int w, int h)  
@@ -786,7 +887,8 @@ void keyboard (unsigned char key, int x, int y)
       exit(0);
     break;  
     case 32:
-      pause = 1 - pause;
+      // pause = 1 - pause;
+      global_sys.randA();
       break;
     // case 'w':
     //   global_sys.ball.c = global_sys.ball.c - Vec3f(0, 0, BALL_TRANSLATION);
