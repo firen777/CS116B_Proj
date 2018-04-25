@@ -39,14 +39,14 @@
 
   #define BALL_TRANSLATION 0.5f
 
-  #define GRAVITY 15.0f
+  #define GRAVITY 100.0f
   #define AIR_DRAG_K 0.1f
   #define DAMPEN_K 0.97f
-  #define TIMERMSECS 1 // 5 ms per timer step
-  #define TIMESTEP 0.01f  // 0.05 s per time step
+  #define TIMERMSECS 1 // 1 ms per timer step
+  #define TIMESTEP 0.01f  // 0.01 s per time step
 
   #define SPRING_L 8.0f //shouldn't use
-  #define SPRING_K 15.0f
+  #define SPRING_K 100.0f
   #define SPRING_C 0.01f //Spring constraint constant. 10% more of it's rest length at most
 
   #define PART_POSITION_X_1 -5.0f
@@ -482,11 +482,11 @@
           part_position = part_position - head_end_direction * segment_length * part_col_count;
           part_position = part_position + down_direction * segment_length;
         } //[i]rows[j]columns
-        part_list[0].fixed = TRUE;
+        // part_list[0].fixed = TRUE;
         // part_list[1].fixed = TRUE;
         // part_list[2].fixed = TRUE;
-        // part_list[3].fixed = TRUE;
-        part_list[0 + part_col_count-1].fixed = TRUE;
+        // // part_list[3].fixed = TRUE;
+        // part_list[0 + part_col_count-1].fixed = TRUE;
         // part_list[0 + part_col_count-2].fixed = TRUE;
         // part_list[0 + part_col_count-3].fixed = TRUE;
         // part_list[0 + part_col_count-4].fixed = TRUE;
@@ -712,9 +712,9 @@
   static int prevTime = 0;
 
   // SolidBall global_ball = SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
-  static PhysSystem global_sys = PhysSystem(Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
-                                     Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z)
-                                     );
+  static PhysSystem global_sys (Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
+                                Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z)
+                                );
 
   //tester
   // Particle p1(Vec3f(BALL_POSITION_X-30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
@@ -790,42 +790,19 @@ int main (int argc, char *argv[])
 
 void init (void)
 {
-  // glShadeModel (GL_SMOOTH);
-  // glClearColor (0.2f, 0.2f, 0.4f, 0.5f);				
-  // glClearDepth (1.0f);
-  // glEnable (GL_DEPTH_TEST);
-  // glDepthFunc (GL_LEQUAL);
-  // glEnable (GL_COLOR_MATERIAL);
-  // glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-  // glEnable (GL_LIGHTING);
-  // glEnable (GL_LIGHT0);
-  // GLfloat lightPos[4] = {-2.0, 1.0, 2.0, 0.0};
-  // // GLfloat lightPos[4] = {-0.0, 0.0, 0.0, 0.0};
-  // glLightfv (GL_LIGHT0, GL_POSITION, (GLfloat *) &lightPos);
-  // glEnable (GL_LIGHT1);
-  // GLfloat lightAmbient1[4] = {0.0, 0.0,  0.0, 0.0};
-  // GLfloat lightPos1[4]     = {1.0, 0.0, -0.2, 0.0};
-  // GLfloat lightDiffuse1[4] = {0.5, 0.5,  0.3, 0.0};
-  // glLightfv (GL_LIGHT1,GL_POSITION, (GLfloat *) &lightPos1);
-  // glLightfv (GL_LIGHT1,GL_AMBIENT, (GLfloat *) &lightAmbient1);
-  // glLightfv (GL_LIGHT1,GL_DIFFUSE, (GLfloat *) &lightDiffuse1);
-  // glLightModeli (GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-  // glLightModeli (GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
-
-  //================//
   srand((unsigned int)time(NULL));
-  glShadeModel (GL_SMOOTH); //<<
-  // glShadeModel (GL_FLAT);
-  glClearColor (0.5f, 0.5f, 0.5f, 0.0f);
-  glClearDepth (1.0f);  //<<
-  // glClearDepth (5.0f);
+  
+  glShadeModel (GL_SMOOTH);
+  glClearColor (0.2f, 0.2f, 0.4f, 0.5f);				
+  glClearDepth (1.0f);
   glEnable (GL_DEPTH_TEST);
-  glDepthFunc (GL_LEQUAL); //GL_LEQUAL, also have GL_LESS, GL_GREATER...
-  glEnable (GL_COLOR_MATERIAL); //<<when light hit the surface, give off the surface color. else grey scale
-  glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); //GL_PERSPECTIVE_CORRECTION_HINT, ... ;GL_NICEST, also GL_FASTEST
-  glEnable (GL_LIGHTING); //<< removed become single shade with no shadow, looks like ambient reflection
-  glEnable (GL_LIGHT0); //<< ...brighter?
-  GLfloat lightPos[4] = {-1.0, 1.0, 0.5, 0.0};
+  glDepthFunc (GL_LEQUAL);
+  glEnable (GL_COLOR_MATERIAL);
+  glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+  glEnable (GL_LIGHTING);
+  glEnable (GL_LIGHT0);
+  GLfloat lightPos[4] = {-2.0, 1.0, 2.0, 0.0};
+  // GLfloat lightPos[4] = {-0.0, 0.0, 0.0, 0.0};
   glLightfv (GL_LIGHT0, GL_POSITION, (GLfloat *) &lightPos);
   glEnable (GL_LIGHT1);
   GLfloat lightAmbient1[4] = {0.0, 0.0,  0.0, 0.0};
@@ -835,6 +812,8 @@ void init (void)
   glLightfv (GL_LIGHT1,GL_AMBIENT, (GLfloat *) &lightAmbient1);
   glLightfv (GL_LIGHT1,GL_DIFFUSE, (GLfloat *) &lightDiffuse1);
   glLightModeli (GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+  glLightModeli (GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+
 }
 
 void display (void)
@@ -845,14 +824,6 @@ void display (void)
   drawBackground();
   
   glEnable (GL_LIGHTING);
-  // glTranslatef (-6.5, 0, -4.0f); // move camera out and center on the rope
-  // global_sys.timestep(1.1f);
-  // printf("asdf drawAll done\n");
-  // testDraw();
-  // glPushMatrix();
-  //   glTranslatef(0,0,-10);
-  //   glutSolidSphere (1.0, 20, 16);
-  // glPopMatrix();
 
   global_sys.drawAll(0.0f, 1.0f, 0.0f);
 
@@ -887,9 +858,14 @@ void keyboard (unsigned char key, int x, int y)
       exit(0);
     break;  
     case 32:
-      // pause = 1 - pause;
-      global_sys.randA();
+      pause = 1 - pause;
       break;
+    case 'k':
+      global_sys.randA();
+    break;
+    case 'r':
+
+    break;
     // case 'w':
     //   global_sys.ball.c = global_sys.ball.c - Vec3f(0, 0, BALL_TRANSLATION);
     // break;
@@ -954,7 +930,10 @@ void animate(int value){
   // 
   // printf("%f\n", timeSincePrevFrame/1000.0f);
   // printf("%f\n", TIMESTEP);
-  global_sys.timestep(TIMESTEP);
+  if (pause == FALSE){
+    global_sys.timestep(TIMESTEP);
+  }
+  
 
 	// ##### END OF GAME/APP MAIN CODE #####
 
