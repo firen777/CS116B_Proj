@@ -18,7 +18,7 @@ LFLAGS =
 LIBS = -framework GLUT -framework OpenGL -framework Cocoa -lm
 
 # define the C source files
-SRCS = p4draft.cpp aclib/*.cpp
+SRCS = Chan_UnHou_programming_project_4.cpp aclib/*.cpp
 
 
 # define the C object files 

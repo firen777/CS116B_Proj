@@ -29,26 +29,26 @@
 #include "aclib/vec3.h"
 
 // * Constants *
+  //Boolean
   #define TRUE 1
   #define FALSE 0
-
+  //Ball
   #define BALL_POSITION_X 7.0f
   #define BALL_POSITION_Y -2.0f
   #define BALL_POSITION_Z -40.0f
   #define BALL_RADIUS 6.5f
-
   #define BALL_TRANSLATION 0.5f
-
+  //World
   #define GRAVITY 20.0f
   #define AIR_DRAG_K 0.1f
   #define DAMPEN_K 0.99f
   #define TIMERMSECS 1 // 1 ms per timer step
   #define TIMESTEP 0.01f  // 0.01 s per time step
-
+  //Spring
   #define SPRING_L 8.0f //shouldn't use
   #define SPRING_K 20.0f
   #define SPRING_C 0.01f //Spring constraint constant. 10% more of it's rest length at most
-
+  //Particles
   #define PART_POSITION_X_1 -5.0f
   #define PART_POSITION_X_2 5.0f
   #define PART_POSITION_Y 6.0f
@@ -73,7 +73,7 @@
    *  accumA(Vec3f _a): Accumilating a via simple vector addition
    *  setV(Vec3f v): EXPERIMENTAL: hacky way to mimick velocity by manipulating the s_prev accordingly.
    *  accumCorr(Vec3f _c): accumilate correction vector
-   *  partCorrect(): add s_corr to s and reset s_corr afterward.
+   *  partCorr(): add s_corr to s and reset s_corr afterward.
    *  
   */
   class Particle {
@@ -88,6 +88,8 @@
       /**air drag
        * Force = 1/2 * (rho) * v^2 * K * Area
        * a = k * v^2
+       * 
+       * Unused. not much different. Use dampening instead.
       */
       void air_drag(){
         Vec3f v = s-s_prev;
@@ -118,7 +120,6 @@
       void verletStep(float dT) {
         if (fixed != TRUE) {
           Vec3f temp = s;
-
           // air_drag();
           s = s + (s - s_prev)*DAMPEN_K + a*dT*dT;
           s_prev = temp;
@@ -265,7 +266,6 @@
 
       /**Spring accumilate contraint to correct the the position of the particles
        * in order to avoid super elasticity
-       * 
       */
       void springAddConstraint(){
         if (head!=NULL && end!=NULL){
@@ -740,14 +740,10 @@
   static int prevTime = 0;
 
   // SolidBall global_ball = SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
-  static PhysSystem global_sys (Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
-                                Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z)
-                                );
+  static PhysSystem* global_sys = new PhysSystem(Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
+                                  Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z)
+                                  );
 
-  //tester
-  // Particle p1(Vec3f(BALL_POSITION_X-30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
-  // Particle p2(Vec3f(BALL_POSITION_X+30, BALL_POSITION_Y +30, BALL_POSITION_Z), PART_RADIUS);
-  // Spring s12(&p1, &p2);
 
   
 // ****************
@@ -790,8 +786,6 @@ void testDraw(){
   //   glTranslatef(p2.s.x, p2.s.y, p2.s.z);
   //   glutSolidSphere(p2.r, 10, 10);
   // glPopMatrix();
-  
-
 }
 
 int main (int argc, char *argv[]) 
@@ -806,7 +800,6 @@ int main (int argc, char *argv[])
   glutKeyboardFunc (keyboard);
   glutSpecialFunc (arrow_keys);
   // Start the timer
-
   glutTimerFunc(TIMERMSECS, animate, 0);
 
 	// Initialize the time variables
@@ -818,7 +811,7 @@ int main (int argc, char *argv[])
 
 void init (void)
 {
-  srand((unsigned int)time(NULL));
+  srand((unsigned int)time(NULL));  //for usage of random
   
   glShadeModel (GL_SMOOTH);
   glClearColor (0.2f, 0.2f, 0.4f, 0.5f);				
@@ -853,7 +846,7 @@ void display (void)
   
   glEnable (GL_LIGHTING);
 
-  global_sys.drawAll(0.0f, 1.0f, 0.0f);
+  global_sys->drawAll(0.0f, 1.0f, 0.0f);
 
   glutSwapBuffers();
   glutPostRedisplay();
@@ -889,10 +882,13 @@ void keyboard (unsigned char key, int x, int y)
       pause = 1 - pause;
       break;
     case 'k':
-      global_sys.randA();
+      global_sys->randA();
     break;
     case 'r':
-      global_sys.reset();
+      delete global_sys;
+      global_sys = new PhysSystem(Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
+                        Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z)
+                        );
     break;
     // case 'w':
     //   global_sys.ball.c = global_sys.ball.c - Vec3f(0, 0, BALL_TRANSLATION);
@@ -959,7 +955,7 @@ void animate(int value){
   // printf("%f\n", timeSincePrevFrame/1000.0f);
   // printf("%f\n", TIMESTEP);
   if (pause == FALSE){
-    global_sys.timestep(TIMESTEP);
+    global_sys->timestep(TIMESTEP);
   }
   
 
