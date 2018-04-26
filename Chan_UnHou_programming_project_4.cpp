@@ -6,6 +6,10 @@
  * Framerate independant animation reference:
  * http://hdrlab.org.nz/articles/amiga-os-articles/minigl-templates/frame-rate-independent-animation-using-glut/
  * 
+ * Keyboard function:
+ * Spacebar: pause and unpause the program
+ * 'r': reset the cloth
+ * 'k': add some random acceleration to each particles
  * 
 */
 
@@ -388,33 +392,27 @@
         for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
           spring_hori[i].springAddConstraint();
         }
-        // partAllCorrect();
         for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
           spring_vert[i].springAddConstraint();
         }
-        // partAllCorrect();
       }
-      /**!!MAY NOT BE USED!!Command all string to constraint. Delegate function*/
+      /**Command all string to constraint. Delegate function*/
       void shearAllConstraint(){
         for (int i=0; i<shear_tlbr_row_count * shear_tlbr_col_count; i++){
           shear_tlbr[i].springAddConstraint();
         }
-        partAllCorrect();
         for (int i=0; i<shear_trbl_row_count * shear_trbl_col_count; i++){
           shear_trbl[i].springAddConstraint();
         }
-        partAllCorrect();
       }
-      /**!!MAY NOT BE USED!!Command all string to constraint. Delegate function*/
+      /**Command all string to constraint. Delegate function*/
       void stiffAllConstraint(){
         for (int i=0; i<stiff_hori_row_count * stiff_hori_col_count; i++){
           stiff_hori[i].springAddConstraint();
         }
-        partAllCorrect();
         for (int i=0; i<stiff_vert_row_count * stiff_vert_col_count; i++){
           stiff_vert[i].springAddConstraint();
         }
-        partAllCorrect();
       }
       /**All Particle correct their position*/
       void partAllCorrect(){
@@ -593,7 +591,12 @@
           stiff_vert = NULL;
         }
       }
-      //TODO: collision
+      /**1. All particles accumilate gravity
+       * 2. Spring, shear, stiff all add acceleration
+       * 3. Spring, shear, stiff all constraint //in this order
+       * 4. All particles do verlet integration
+       * 
+      */
       void timestep(float dT){
         accumGrav();
         springAllAddA();
@@ -608,78 +611,12 @@
         // shearAllConstraint();
         // stiffAllConstraint();
 
-        // springAllConstraint();
-        // shearAllConstraint();
-        // stiffAllConstraint();
-
-        // springAllConstraint();
-        // shearAllConstraint();
-        // stiffAllConstraint();
-
         partIntegrate(dT);
         // collisionCheckList();
       }
 
       void drawAll(float r=0.0f, float g=0.0f, float b=0.0f){
-        //DEBUG VERSION
-
-        // glColor3f(r,g,b);
-        // //draw particles
-        // Vec3f p; //temp position of particle
-        // float p_r; //temp radius of particle
-        // if (part_list != NULL) {
-        //   for (int i=0; i<part_row_count * part_col_count; i++){
-        //     p = part_list[i].s;
-        //     p_r = part_list[i].r;
-        //     glPushMatrix();
-        //       glTranslatef(p.x, p.y, p.z);
-        //       glutSolidSphere(p_r, 10, 10);
-        //     glPopMatrix();
-        //   }
-        // }
-        // // printf("asdf drawParts done\n");
-
-        // //draw rope segment
-        // Vec3f p1;
-        // Vec3f p2;
-        // glLineWidth(3.0f);
-        // if (spring_hori != NULL) {
-        //   for (int i=0; i<spring_hori_row_count * spring_hori_col_count; i++){
-        //     if (spring_hori[i].head!=NULL && spring_hori[i].end!=NULL) {
-        //       p1 = spring_hori[i].head->s;
-        //       p2 = spring_hori[i].end ->s;
-        //       glBegin(GL_LINES);
-        //         glVertex3f(p1.x, p1.y, p1.z);
-        //         glVertex3f(p2.x, p2.y, p2.z);
-        //       glEnd();  
-        //     }
-        //   }
-        // }
-        // // printf("asdf draw spring_hori done\n");
-
-        // if (spring_vert != NULL) {
-        //   for (int i=0; i<spring_vert_row_count * spring_vert_col_count; i++){
-        //     if (spring_vert[i].head!=NULL && spring_vert[i].end!=NULL) {
-        //       p1 = spring_vert[i].head->s;
-        //       p2 = spring_vert[i].end ->s;
-        //       glBegin(GL_LINES);
-        //         glVertex3f(p1.x, p1.y, p1.z);
-        //         glVertex3f(p2.x, p2.y, p2.z);
-        //       glEnd();  
-        //     }
-        //   }
-        // }
-        // printf("asdf draw spring_vert done\n");
-
-        //draw ball
-        // glColor3f(r+0.3f, g+0.3f, b+0.3f);
-        // glPushMatrix();
-        //     glTranslatef(ball.c.x, ball.c.y, ball.c.z);
-        //     glutSolidSphere(ball.r, 50, 50);
-        // glPopMatrix();
-
-        //==================================//
-        //FINAL VERSION
+        
         Vec3f p1;
         Vec3f p2;
         Vec3f p3;
@@ -694,7 +631,6 @@
             normal = Vec3f(p1,p2,p3).getUnit();
             glNormal3f(normal.x, normal.y, normal.z);
             glBegin(GL_TRIANGLES);
-              
               glVertex3f(p1.x, p1.y, p1.z);
               glVertex3f(p2.x, p2.y, p2.z);
               glVertex3f(p3.x, p3.y, p3.z);
@@ -702,14 +638,13 @@
           }
         }
 
-        glColor3f(1.0f,1.0f,1.0f);
+        glColor3f(1.0f-r,1.0f-g,1.0f-b);
         for (int i=0; i<part_row_count-1; i++){
           for (int j=0; j<part_col_count-1; j++){
             p1 = part_list[i*part_row_count + j+1].s;
             p2 = part_list[(i+1)*part_row_count + j].s;
             p3 = part_list[(i+1)*part_row_count + j+1].s;
             normal = Vec3f(p1,p2,p3).getUnit();
-            
             glNormal3f(normal.x, normal.y, normal.z);
             glBegin(GL_TRIANGLES);
               glVertex3f(p1.x, p1.y, p1.z);
@@ -721,14 +656,12 @@
 
       }
 
-      /**Random acceleration to all particle*/
+      /**Add Random acceleration to all particle*/
       void randA(){
         for (int i=0; i<part_row_count*part_col_count; i++){
           part_list[i].accumA(Vec3f(nextRand(), nextRand(), nextRand()));
         }
       }
-
-      void reset(){}
   };
 
 // **********************
@@ -936,36 +869,12 @@ void drawBackground(){
 
 
 void animate(int value){
-  // Set up the next timer tick (do this first)
-    glutTimerFunc(TIMERMSECS, animate, 0);
+  glutTimerFunc(TIMERMSECS, animate, 0);
 
-	// Measure the elapsed time
-	// int currTime = glutGet(GLUT_ELAPSED_TIME);
-	// int timeSincePrevFrame = currTime - prevTime;
-  // float timeSincePrev_ms = timeSincePrevFrame/2000.0f;
-	// int elapsedTime = currTime - startTime;
-
-	// ##### REPLACE WITH YOUR OWN GAME/APP MAIN CODE HERE #####
-  // if (timeSincePrev_ms < 0.07f) {
-  //   global_sys.timestep(timeSincePrev_ms);
-  // }
-
-
-  // 
-  // printf("%f\n", timeSincePrevFrame/1000.0f);
-  // printf("%f\n", TIMESTEP);
   if (pause == FALSE){
     global_sys->timestep(TIMESTEP);
   }
   
-
-	// ##### END OF GAME/APP MAIN CODE #####
-
-	//!! Non-constant dT sucks lol
-
-	// Force a redisplay to render the new image
 	glutPostRedisplay();
-
-	// prevTime = currTime;
 }
 

@@ -10,64 +10,54 @@
 #include <stdio.h>
 
 float Vec3f::getL() const{
-    float ans = this->x*this->x + this->y*this->y + this->z*this->z;
-    ans = sqrt(ans);
-    return ans;
+    return sqrt(this->x*this->x + this->y*this->y + this->z*this->z);
 }
 
 Vec3f Vec3f::add(const Vec3f& v) const{
-    Vec3f ans(this->x + v.x, this->y + v.y, this->z + v.z);
-    return ans;
+    return Vec3f(this->x + v.x, this->y + v.y, this->z + v.z);
 }
 
 Vec3f operator+(const Vec3f& a, const Vec3f& b){
-    return a.add(b);
+    return Vec3f(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
 Vec3f Vec3f::getNeg() const{
-    return *this * -1.0f;
+    return Vec3f(this->x * -1.0f, this->y * -1.0f, this->z * -1.0f);
 }
 
 Vec3f Vec3f::operator-() const{
-    return *this * -1.0f;
+    return Vec3f(this->x * -1.0f, this->y * -1.0f, this->z * -1.0f);
 }
 
 Vec3f operator-(const Vec3f& a, const Vec3f& b){
-    return a.add(b.getNeg());
+    return Vec3f(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
 Vec3f Vec3f::scale(float n) const{
-    Vec3f ans(this->x * n, this->y * n, this->z * n);
-    return ans;
+    return Vec3f(this->x * n, this->y * n, this->z * n);
 }
 
 Vec3f operator*(const Vec3f& v, float n){
-    return v.scale(n);
+    return Vec3f(v.x * n, v.y * n, v.z * n);
 }
 
 Vec3f operator*(float n, const Vec3f& v){
-    return v.scale(n);
+    return Vec3f(v.x * n, v.y * n, v.z * n);
 }
 
 float Vec3f::dot(const Vec3f& v) const{
-    float ans = this->x * v.x;
-    ans += this->y * v.y;
-    ans += this->z * v.z;
-    return ans;
+    return this->x * v.x + this->y * v.y + this->z * v.z;
 }
 
 float operator*(const Vec3f& v1, const Vec3f& v2){
-    return v1.dot(v2);
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
 Vec3f Vec3f::cross(const Vec3f& v) const{
-    Vec3f icomp = Vec3f::iVec();
-    Vec3f jcomp = Vec3f::jVec();
-    Vec3f kcomp = Vec3f::kVec();
 
-    icomp = icomp * (this->y*v.z - this->z*v.y);
-    jcomp = jcomp * (this->x*v.z - this->z*v.x);
-    kcomp = kcomp * (this->x*v.y - this->y*v.x);
+    Vec3f icomp(this->y*v.z - this->z*v.y, 0.0f, 0.0f);
+    Vec3f jcomp(0.0f, this->x*v.z - this->z*v.x, 0.0f);
+    Vec3f kcomp(0.0f, 0.0f, this->x*v.y - this->y*v.x);
 
     Vec3f ans = icomp - jcomp + kcomp;
 
