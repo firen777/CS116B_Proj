@@ -209,11 +209,12 @@
     public:
       float r;
       Vec3f c;
+      BALL_DIR dir;
     public:
       /**Constructor*/
-      SolidBall(const Vec3f& _center, float _radius):c(_center), r(_radius){}
+      SolidBall(const Vec3f& _center, float _radius, BALL_DIR _dir = BALL_LEFT):c(_center), r(_radius), dir(_dir){}
       /**Defaul Constructor, set everything to 0*/
-      SolidBall():r(0.0f), c(Vec3f()){}
+      SolidBall():r(0.0f), c(Vec3f()), dir(BALL_LEFT){}
       
       Vec3f surfaceNormal (const Vec3f& collision_point) {
         return (collision_point - c).getUnit();
@@ -235,6 +236,10 @@
           return TRUE;
         }
         return FALSE;
+      }
+
+      void ballMoving(float x = BALL_TRANSLATION){
+
       }
   };
 
@@ -710,10 +715,12 @@
   void display (void);
   /** Reshape callback for GLUT */
   void reshape (int w, int h);
-  /** Keyboard callback for GLUT */
+  /** Keyboard callback for Control */
   void keyboard (unsigned char key, int x, int y);
-  /** Arrow callback for GLUT */
+  /** Arrow callback for Ball */
   void arrow_keys (int a_keys, int x, int y); 
+  /** Mouse callback for wind*/
+  void mouseFunc (int button, int state, int x, int y);
 
   //Drawing function
   void drawBackground();
@@ -750,6 +757,7 @@ int main (int argc, char *argv[])
   glutReshapeFunc (reshape);
   glutKeyboardFunc (keyboard);
   glutSpecialFunc (arrow_keys);
+  glutMouseFunc (mouseFunc);
   // Start the timer
   glutTimerFunc(TIMERMSECS, animate, 0);
 
