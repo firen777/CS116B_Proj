@@ -201,9 +201,11 @@
    * member var:
    *  r: radius of the Ball
    *  c: center point of the sphere
+   *  dir: direction of the ball
    * member func:
    *  isHit(point); return boolean of whether the given point collide with the ball.
    *  surfaceNormal(collision_point); return Vec3f of the Normal unit vector given a collision point
+   *  ballMoving(x); move the ball to one direction and loop inside the boundary
   */
   class SolidBall:SolidObject {
     public:
@@ -239,7 +241,29 @@
       }
 
       void ballMoving(float x = BALL_TRANSLATION){
-
+        switch (dir)
+        {
+          case BALL_LEFT:
+            c = c + Vec3f(-x, 0.0f, 0.0f);
+            break;
+          case BALL_RIGHT:
+            c = c + Vec3f(x, 0.0f, 0.0f);
+            break;
+          case BALL_UP:
+            c = c + Vec3f(0.0f, x, 0.0f);
+            break;
+          case BALL_DOWN:
+            c = c + Vec3f(0.0f, -x, 0.0f);
+            break;
+          case BALL_FORW:
+            c = c + Vec3f(0.0f, 0.0f, -x);
+            break;
+          case BALL_BACK:
+            c = c + Vec3f(0.0f, 0.0f, x);
+            break;
+          default:
+            break;
+        }
       }
   };
 
@@ -879,6 +903,11 @@ void arrow_keys (int a_keys, int x, int y)
     default:
     break;
   }
+}
+
+void mouseFunc (int button, int state, int x, int y)
+{
+
 }
 
 void drawBackground(){
