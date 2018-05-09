@@ -48,6 +48,8 @@
   #define DAMPEN_K 0.99f
   #define TIMERMSECS 1 // 1 ms per timer step
   #define TIMESTEP 0.01f  // 0.01 s per time step
+  #define WIND_FORCE 200.0f //wind acceleration field
+  #define WIND_FIELD_RADIUS 15.0f
   //Spring
   #define SPRING_L 8.0f //shouldn't use
   #define SPRING_K 20.0f
@@ -67,6 +69,12 @@
   #define BOUND_DOWN -10.f
   #define BOUND_FORW 15.f
   #define BOUND_BACK -15.f
+// *************
+
+// * GLOBAL Var part 1 *
+  static int wind_blow = FALSE;
+  static float wind_x = 0.0f;
+  static float wind_y = 0.0f;
 // *************
 
 // * Class Declarations *
@@ -390,12 +398,40 @@
       int stiff_vert_row_count;
       int stiff_vert_col_count;
 
-      // SolidBall ball; //not in project 4
+      SolidBall* ball; //not in project 4
     private:
       /**Accumilate gravity on all particles. Delegate function*/
       void accumGrav() {
         for (int i=0; i<part_row_count * part_col_count; i++){
           part_list[i].accumA(Vec3f(0.0f,-GRAVITY,0.0f));
+        }
+      }
+
+      /**Accumilate wind force on all particles.*/
+      void accumWind(float x, float y, float r=WIND_FIELD_RADIUS, float a=WIND_FORCE){
+        Vec3f windCenter(x, y, 0.0f);
+        Vec3f projected_pos(0.0f, 0.0f, 0.0f);
+        Vec3f wind_acceleration(0.0f, 0.0f, 0.0f);
+        Vec3f wind_field(0.0f, 0.0f, -a);
+
+        for (int i=0; i<part_row_count-1; i++){
+          for (int j=0; j<part_col_count-1; j++){
+
+            Vec3f surface_normal(part_list[i*part_row_count + j].s, 
+                                 part_list[i*part_row_count + j+1].s, 
+                                 part_list[(i+1)*part_row_count + j].s); //surface normal of [i][j],[i][j+1],[i+1][j]
+
+            projected_pos.x = part_list[i*part_row_count + j].s.x;
+            projected_pos.y = part_list[i*part_row_count + j].s.y;
+
+            if ((projected_pos - windCenter).getL() <= r){ //the X-Y position is inside the wind circle
+              wind_acceleration = Vec3f(0.0f,
+                                   0.0f,
+                                   -abs(surface_normal*wind_field));
+              part_list[i*part_row_count + j].accumA(wind_acceleration);
+
+            }
+          }
         }
       }
 
@@ -644,6 +680,7 @@
       */
       void timestep(float dT){
         accumGrav();
+        accumWind(wind_x, wind_y);
         springAllAddA();
         shearAllAddA();
         stiffAllAddA();
@@ -712,6 +749,8 @@
 // **********************
 
 // * GLOBAL variables and Objects.
+  
+
   static int pause = TRUE;
   //timer start and prev time, in ms
   static int startTime = 0; 
@@ -907,7 +946,19 @@ void arrow_keys (int a_keys, int x, int y)
 
 void mouseFunc (int button, int state, int x, int y)
 {
-
+  if (button == GLUT_LEFT_BUTTON) {
+    if (state == GLUT_UP && wind_blow == TRUE) {
+      wind_blow = FALSE;
+      printf("UP\n");
+    }
+    if (state == GLUT_DOWN) {
+      if (wind_blow == FALSE) wind_blow = TRUE;
+      wind_x = x;
+      wind_y = y;
+      printf("DOWN\n");
+      printf("%f,%f", wind_x, wind_y);
+    }
+  }
 }
 
 void drawBackground(){
