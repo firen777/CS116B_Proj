@@ -39,17 +39,17 @@
   //Ball
   #define BALL_POSITION_X 7.0f
   #define BALL_POSITION_Y -2.0f
-  #define BALL_POSITION_Z -40.0f
-  #define BALL_RADIUS 6.5f
-  #define BALL_TRANSLATION 0.1f
+  #define BALL_POSITION_Z -10.0f
+  #define BALL_RADIUS 1.5f
+  #define BALL_TRANSLATION 0.05f
   //World
   #define GRAVITY 20.0f
   #define AIR_DRAG_K 0.1f
   #define DAMPEN_K 0.99f
   #define TIMERMSECS 1 // 1 ms per timer step
   #define TIMESTEP 0.01f  // 0.01 s per time step
-  #define WIND_FORCE 200.0f //wind acceleration field
-  #define WIND_FIELD_RADIUS 15.0f
+  #define WIND_FORCE 5000.0f //wind acceleration field
+  #define WIND_FIELD_RADIUS 1.0f
   //Spring
   #define SPRING_L 8.0f //shouldn't use
   #define SPRING_K 20.0f
@@ -61,18 +61,17 @@
   #define PART_POSITION_Z -10.0f
   #define PART_ROW_COUNT 50
   #define PART_COL_COUNT 50
-  #define PART_RADIUS 0.5f
+  #define PART_RADIUS 0.1f
   //Boundary
   #define BOUND_LEFT -10.f
   #define BOUND_RIGHT 10.f
   #define BOUND_UP 10.f
   #define BOUND_DOWN -10.f
-  #define BOUND_FORW 15.f
-  #define BOUND_BACK -15.f
+  #define BOUND_FORW -20.f
+  #define BOUND_BACK -5.0f
 // *************
 
 // * GLOBAL Var part 1 *
-  static int wind_blow = FALSE;
   static float wind_x = 0.0f;
   static float wind_y = 0.0f;
 // *************
@@ -248,26 +247,32 @@
         return FALSE;
       }
 
-      void ballMoving(float x = BALL_TRANSLATION){
+      void ballMoving(float s = BALL_TRANSLATION){
         switch (dir)
         {
           case BALL_LEFT:
-            c = c + Vec3f(-x, 0.0f, 0.0f);
+            c = c + Vec3f(-s, 0.0f, 0.0f);
+            if (c.x < BOUND_LEFT) c.x = BOUND_RIGHT;
             break;
           case BALL_RIGHT:
-            c = c + Vec3f(x, 0.0f, 0.0f);
+            c = c + Vec3f(s, 0.0f, 0.0f);
+            if (c.x > BOUND_RIGHT) c.x = BOUND_LEFT;
             break;
           case BALL_UP:
-            c = c + Vec3f(0.0f, x, 0.0f);
+            c = c + Vec3f(0.0f, s, 0.0f);
+            if (c.y > BOUND_UP) c.y = BOUND_DOWN;
             break;
           case BALL_DOWN:
-            c = c + Vec3f(0.0f, -x, 0.0f);
+            c = c + Vec3f(0.0f, -s, 0.0f);
+            if (c.y < BOUND_DOWN) c.y = BOUND_UP;
             break;
           case BALL_FORW:
-            c = c + Vec3f(0.0f, 0.0f, -x);
+            c = c + Vec3f(0.0f, 0.0f, -s);
+            if (c.z < BOUND_FORW) c.z = BOUND_BACK;
             break;
           case BALL_BACK:
-            c = c + Vec3f(0.0f, 0.0f, x);
+            c = c + Vec3f(0.0f, 0.0f, s);
+            if (c.z > BOUND_BACK) c.z = BOUND_FORW;
             break;
           default:
             break;
@@ -398,7 +403,7 @@
       int stiff_vert_row_count;
       int stiff_vert_col_count;
 
-      SolidBall* ball; //not in project 4
+      SolidBall* ball; 
     private:
       /**Accumilate gravity on all particles. Delegate function*/
       void accumGrav() {
@@ -512,20 +517,20 @@
           ans *= -1.0;
         return ans;
       }
-      // /**Particle colliding with ball*/ //not needed in Project 4
-        // void collisionCheckList() {
-        //   for (int i=0; i<part_count; i++){
-        //     if (ball.isHit(part_list[i])){
-        //       Vec3f corrected_position = ball.c + ball.surfaceNormal(part_list[i]) * (ball.r + part_list[i].r);
-        //       part_list[i].s = corrected_position;
-        //       part_list[i].s_prev = corrected_position;
-        //     }
-        //   }
-      // }
+      /**Particle colliding with ball*/ //not needed in Project 4
+      void collisionCheckList() {
+        for (int i=0; i<part_row_count * part_col_count; i++){
+          if (ball->isHit(part_list[i])){
+            Vec3f corrected_position = ball->c + ball->surfaceNormal(part_list[i]) * (ball->r + part_list[i].r);
+            part_list[i].s = corrected_position;
+            part_list[i].s_prev = corrected_position;
+          }
+        }
+      }
       
     public:
       /**Constructor. */
-      PhysSystem (const Vec3f& topleft, const Vec3f& topright, 
+      PhysSystem (const Vec3f& topleft, const Vec3f& topright, SolidBall* _ball,
                   int _part_row_count = PART_ROW_COUNT, int _part_col_count = PART_COL_COUNT)
       {
         //counting:
@@ -550,6 +555,10 @@
 
         stiff_vert_row_count = _part_row_count - 2;
         stiff_vert_col_count = _part_col_count;
+
+        ball = _ball;
+
+        
 
         //Memory Allocation
         part_list = new Particle[part_row_count * part_col_count];    //Dynamically allocate an array of pointers
@@ -679,6 +688,10 @@
        * 
       */
       void timestep(float dT){
+        // ball->ballMoving(BALL_TRANSLATION);
+
+        
+
         accumGrav();
         accumWind(wind_x, wind_y);
         springAllAddA();
@@ -689,12 +702,15 @@
         shearAllConstraint();
         stiffAllConstraint();
 
+        collisionCheckList();
+
         // springAllConstraint();
         // shearAllConstraint();
         // stiffAllConstraint();
 
         partIntegrate(dT);
-        // collisionCheckList();
+
+        
       }
 
       void drawAll(float r=0.0f, float g=0.0f, float b=0.0f){
@@ -720,7 +736,7 @@
           }
         }
 
-        glColor3f(1.0f-r,1.0f-g,1.0f-b);
+        glColor3f(1.0f,1.0f,1.0f);
         for (int i=0; i<part_row_count-1; i++){
           for (int j=0; j<part_col_count-1; j++){
             p1 = part_list[i*part_row_count + j+1].s;
@@ -735,6 +751,12 @@
             glEnd();
           }
         }
+
+        glColor3f(1.0f-r, 1.0f-g, 1.0f-b);
+        glPushMatrix();
+            glTranslatef(ball->c.x, ball->c.y, ball->c.z);
+            glutSolidSphere(ball->r, 50, 50);
+        glPopMatrix();
 
       }
 
@@ -758,9 +780,10 @@
 
   static BALL_DIR ball_direction = BALL_LEFT;
 
-  // SolidBall global_ball = SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
+  SolidBall* global_ball = new SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
   static PhysSystem* global_sys = new PhysSystem(Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
-                                  Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z)
+                                  Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z),
+                                  global_ball
                                   );
 
 
@@ -868,7 +891,7 @@ void display (void)
   
   glEnable (GL_LIGHTING);
 
-  global_sys->drawAll(0.0f, 1.0f, 0.0f);
+  global_sys->drawAll(1.0f, 0.0f, 0.0f);
 
   glutSwapBuffers();
   glutPostRedisplay();
@@ -908,16 +931,21 @@ void keyboard (unsigned char key, int x, int y)
     break;
     case 'r':
       delete global_sys;
+      delete global_ball;
+      global_ball = new SolidBall(Vec3f(BALL_POSITION_X, BALL_POSITION_Y, BALL_POSITION_Z), BALL_RADIUS);
       global_sys = new PhysSystem(Vec3f(PART_POSITION_X_1, PART_POSITION_Y, PART_POSITION_Z),
-                        Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z)
+                        Vec3f(PART_POSITION_X_2, PART_POSITION_Y, PART_POSITION_Z),
+                        global_ball
                         );
     break;
-    // case 'w':
-    //   global_sys.ball.c = global_sys.ball.c - Vec3f(0, 0, BALL_TRANSLATION);
-    // break;
-    // case 's':
-    //   global_sys.ball.c = global_sys.ball.c + Vec3f(0, 0, BALL_TRANSLATION);
-    // break;
+    case 'w':
+      // global_ball->dir = BALL_FORW;
+      global_ball->c = global_ball->c - Vec3f(0.0f, 0.0f, BALL_TRANSLATION);
+    break;
+    case 's':
+      // global_ball->dir = BALL_BACK;
+      global_ball->c = global_ball->c + Vec3f(0.0f, 0.0f, BALL_TRANSLATION);
+    break;
     default: 
     break;
   }
@@ -927,17 +955,21 @@ void arrow_keys (int a_keys, int x, int y)
 {
   switch(a_keys) 
   {
-    // case GLUT_KEY_UP:
-    //   global_sys.ball.c = global_sys.ball.c + Vec3f(0, BALL_TRANSLATION, 0);
-    // break;
-    // case GLUT_KEY_DOWN: 
-    //   global_sys.ball.c = global_sys.ball.c - Vec3f(0, BALL_TRANSLATION, 0);
-    // break;
-    // case GLUT_KEY_LEFT:
-    //   global_sys.ball.c = global_sys.ball.c - Vec3f(BALL_TRANSLATION, 0, 0);
-    // break;
-    // case GLUT_KEY_RIGHT:
-    //   global_sys.ball.c = global_sys.ball.c + Vec3f(BALL_TRANSLATION, 0, 0);
+    case GLUT_KEY_UP:
+      // global_ball->dir = BALL_UP;
+      global_ball->c = global_ball->c + Vec3f(0.0f, BALL_TRANSLATION, 0.0f);
+    break;
+    case GLUT_KEY_DOWN: 
+      // global_ball->dir = BALL_DOWN;
+      global_ball->c = global_ball->c - Vec3f(0.0f, BALL_TRANSLATION, 0.0f);
+    break;
+    case GLUT_KEY_LEFT:
+      // global_ball->dir = BALL_LEFT;
+      global_ball->c = global_ball->c - Vec3f(BALL_TRANSLATION, 0.0f, 0.0f);
+    break;
+    case GLUT_KEY_RIGHT:
+      // global_ball->dir = BALL_RIGHT;
+      global_ball->c = global_ball->c + Vec3f(BALL_TRANSLATION, 0.0f, 0.0f);
     break;
     default:
     break;
@@ -946,17 +978,13 @@ void arrow_keys (int a_keys, int x, int y)
 
 void mouseFunc (int button, int state, int x, int y)
 {
+  float screen_space_x_constant = 31.25f;
+  float screen_space_y_constant = 17.14f;
   if (button == GLUT_LEFT_BUTTON) {
-    if (state == GLUT_UP && wind_blow == TRUE) {
-      wind_blow = FALSE;
-      printf("UP\n");
-    }
     if (state == GLUT_DOWN) {
-      if (wind_blow == FALSE) wind_blow = TRUE;
-      wind_x = x;
-      wind_y = y;
-      printf("DOWN\n");
-      printf("%f,%f", wind_x, wind_y);
+      wind_x = ((float)x/(float)glutGet(GLUT_WINDOW_WIDTH) - 0.5f) * screen_space_x_constant;
+      wind_y = (1 - (float)y/(float)glutGet(GLUT_WINDOW_HEIGHT) - 0.5f) * screen_space_y_constant;
+      // printf("%f,%f; %d,%d\n", wind_x, wind_y, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
     }
   }
 }
