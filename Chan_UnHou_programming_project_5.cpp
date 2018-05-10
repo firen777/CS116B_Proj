@@ -41,15 +41,15 @@
   #define BALL_POSITION_Y -2.0f
   #define BALL_POSITION_Z -10.0f
   #define BALL_RADIUS 1.5f
-  #define BALL_TRANSLATION 0.05f
+  #define BALL_TRANSLATION 0.1f
   //World
   #define GRAVITY 20.0f
   #define AIR_DRAG_K 0.1f
   #define DAMPEN_K 0.99f
   #define TIMERMSECS 1 // 1 ms per timer step
   #define TIMESTEP 0.01f  // 0.01 s per time step
-  #define WIND_FORCE 5000.0f //wind acceleration field
-  #define WIND_FIELD_RADIUS 1.0f
+  #define WIND_FORCE 200.0f //wind acceleration field
+  #define WIND_FIELD_RADIUS 2.0f
   //Spring
   #define SPRING_L 8.0f //shouldn't use
   #define SPRING_K 20.0f
@@ -74,6 +74,7 @@
 // * GLOBAL Var part 1 *
   static float wind_x = 0.0f;
   static float wind_y = 0.0f;
+  static float wind_z_dir = -1.0f; 
 // *************
 
 // * Class Declarations *
@@ -432,8 +433,9 @@
             if ((projected_pos - windCenter).getL() <= r){ //the X-Y position is inside the wind circle
               wind_acceleration = Vec3f(0.0f,
                                    0.0f,
-                                   -abs(surface_normal*wind_field));
+                                   wind_z_dir * abs(surface_normal.getUnit()*wind_field));
               part_list[i*part_row_count + j].accumA(wind_acceleration);
+              // part_list[i*part_row_count + j].accumA(wind_field);
 
             }
           }
@@ -978,9 +980,18 @@ void arrow_keys (int a_keys, int x, int y)
 
 void mouseFunc (int button, int state, int x, int y)
 {
-  float screen_space_x_constant = 31.25f;
-  float screen_space_y_constant = 17.14f;
+  float screen_space_x_constant = (float)glutGet(GLUT_WINDOW_WIDTH)/42.0f;
+  float screen_space_y_constant = (float)glutGet(GLUT_WINDOW_HEIGHT)/42.0f; //experimental value for screen to model space trasformation
   if (button == GLUT_LEFT_BUTTON) {
+    wind_z_dir = -1.0f;
+    if (state == GLUT_DOWN) {
+      wind_x = ((float)x/(float)glutGet(GLUT_WINDOW_WIDTH) - 0.5f) * screen_space_x_constant;
+      wind_y = (1 - (float)y/(float)glutGet(GLUT_WINDOW_HEIGHT) - 0.5f) * screen_space_y_constant;
+      // printf("%f,%f; %d,%d\n", wind_x, wind_y, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+    }
+  }
+  else if (button == GLUT_RIGHT_BUTTON) {
+    wind_z_dir = 1.0f;
     if (state == GLUT_DOWN) {
       wind_x = ((float)x/(float)glutGet(GLUT_WINDOW_WIDTH) - 0.5f) * screen_space_x_constant;
       wind_y = (1 - (float)y/(float)glutGet(GLUT_WINDOW_HEIGHT) - 0.5f) * screen_space_y_constant;
